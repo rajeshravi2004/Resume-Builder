@@ -10,7 +10,8 @@ const DEFAULT_RESUME = {
     phone: '+91-8883761709',
     location: 'Tamilnadu, India',
     website: 'https://github.com/rajeshravi2004/portfolio',
-    summary: 'Passionate Junior Full Stack Developer with strong foundation in modern web technologies and AI/ML. Specialized in responsive web apps using React, Node.js, and Python; experienced in healthcare tech and AI applications.'
+    summary:
+      'Passionate Junior Full Stack Developer with strong foundation in modern web technologies and AI/ML. Specialized in responsive web apps using React, Node.js, and Python; experienced in healthcare tech and AI applications.',
   },
   sections: {
     experience: [
@@ -47,8 +48,8 @@ const DEFAULT_RESUME = {
       { id: 'in2', name: 'Open source contributions' },
       { id: 'in3', name: 'Healthcare technology innovation' },
       { id: 'in4', name: 'Continuous learning and skill development' },
-      { id: 'in5', name: 'Problem-solving challenges' }
-    ]
+      { id: 'in5', name: 'Problem-solving challenges' },
+    ],
   },
   template: 'classic',
   customTemplate: {
@@ -56,60 +57,213 @@ const DEFAULT_RESUME = {
     accentColor: '#2563eb',
     fontFamily: 'Inter, system-ui, Arial',
     layout: 'one-column',
-    customCSS: ''
-  }
+    customCSS: '',
+    sectionLayouts: {
+      experience: { variant: 'cards', hidden: false, title: 'Experience' },
+      projects: { variant: 'cards', hidden: false, title: 'Projects' },
+      education: { variant: 'cards', hidden: false, title: 'Education' },
+      skills: { variant: 'tags', hidden: false, title: 'Skills' },
+      certifications: { variant: 'cards', hidden: false, title: 'Certifications' },
+      languages: { variant: 'list', hidden: false, title: 'Languages' },
+      interests: { variant: 'tags', hidden: false, title: 'Interests' },
+    },
+  },
+  uploadedTemplateHtml: '',
 }
 
-export const useResumeStore = create(persist((set, get) => ({
-  resume: DEFAULT_RESUME,
-  sectionIndexes: Object.fromEntries(Object.keys(DEFAULT_RESUME.sections).map(k => [k, Object.fromEntries(DEFAULT_RESUME.sections[k].map((x, i) => [x.id, i]))])),
+const buildSectionIndexes = sections =>
+  Object.fromEntries(
+    Object.keys(sections).map(key => [
+      key,
+      Object.fromEntries(sections[key].map((item, index) => [item.id, index])),
+    ]),
+  )
 
-  reset: () => set({
-    resume: DEFAULT_RESUME,
-    sectionIndexes: Object.fromEntries(Object.keys(DEFAULT_RESUME.sections).map(k => [k, Object.fromEntries(DEFAULT_RESUME.sections[k].map((x, i) => [x.id, i]))]))
-  }),
+const emptyResumeFromDefault = () => ({
+  basics: {
+    fullName: '',
+    title: '',
+    email: '',
+    phone: '',
+    location: '',
+    website: '',
+    summary: '',
+  },
+  sections: Object.fromEntries(
+    Object.keys(DEFAULT_RESUME.sections).map(key => [key, []]),
+  ),
+  template: DEFAULT_RESUME.template,
+  customTemplate: { ...DEFAULT_RESUME.customTemplate },
+  uploadedTemplateHtml: '',
+})
 
-  setBasics: (basics) => set(produce((state) => { state.resume.basics = { ...state.resume.basics, ...basics } })),
+export const useResumeStore = create(
+  persist(
+    (set, get) => ({
+      resume: DEFAULT_RESUME,
+      sectionIndexes: buildSectionIndexes(DEFAULT_RESUME.sections),
 
-  addItem: (section, item) => set(produce((state) => {
-    const id = crypto.randomUUID()
-    state.resume.sections[section].push({ id, ...item })
-    const idx = state.resume.sections[section].length - 1
-    state.sectionIndexes[section][id] = idx
-  })),
+      reset: () =>
+        set({
+          resume: DEFAULT_RESUME,
+          sectionIndexes: buildSectionIndexes(DEFAULT_RESUME.sections),
+        }),
 
-  updateItem: (section, id, patch) => set(produce((state) => {
-    const index = state.sectionIndexes[section][id]
-    if (index === undefined) return
-    const list = state.resume.sections[section]
-    list[index] = { ...list[index], ...patch }
-  })),
+      clear: () => {
+        const cleared = emptyResumeFromDefault()
+        set({
+          resume: cleared,
+          sectionIndexes: buildSectionIndexes(cleared.sections),
+        })
+      },
 
-  removeItem: (section, id) => set(produce((state) => {
-    const index = state.sectionIndexes[section][id]
-    if (index === undefined) return
-    const arr = state.resume.sections[section]
-    arr.splice(index, 1)
-    delete state.sectionIndexes[section][id]
-    for (let i = index; i < arr.length; i++) {
-      state.sectionIndexes[section][arr[i].id] = i
-    }
-  })),
+      loadFromJson: incoming =>
+        set(
+          produce(state => {
+            if (!incoming || typeof incoming !== 'object') return
+            const next = {
+              basics: {
+                ...emptyResumeFromDefault().basics,
+                ...(incoming.basics || {}),
+              },
+              sections: Object.fromEntries(
+                Object.keys(emptyResumeFromDefault().sections).map(key => {
+                  const list = Array.isArray(incoming.sections?.[key])
+                    ? incoming.sections[key]
+                    : []
+                  const normalized = list.map(item => ({
+                    ...item,
+                    id: item.id || crypto.randomUUID(),
+                  }))
+                  return [key, normalized]
+                }),
+              ),
+              template: incoming.template || DEFAULT_RESUME.template,
+              customTemplate: {
+                ...DEFAULT_RESUME.customTemplate,
+                ...(incoming.customTemplate || {}),
+                sectionLayouts: {
+                  ...DEFAULT_RESUME.customTemplate.sectionLayouts,
+                  ...(incoming.customTemplate?.sectionLayouts || {}),
+                },
+              },
+              uploadedTemplateHtml: incoming.uploadedTemplateHtml || '',
+            }
+            state.resume = next
+            state.sectionIndexes = buildSectionIndexes(next.sections)
+          }),
+        ),
 
-  reorder: (section, fromIndex, toIndex) => set(produce((state) => {
-    const arr = state.resume.sections[section]
-    if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) return
-    const [moved] = arr.splice(fromIndex, 1)
-    arr.splice(toIndex, 0, moved)
-    // rebuild indexes locally for section for O(n) once per reorder
-    state.sectionIndexes[section] = Object.fromEntries(arr.map((x, i) => [x.id, i]))
-  })),
+      setBasics: basics =>
+        set(
+          produce(state => {
+            state.resume.basics = { ...state.resume.basics, ...basics }
+          }),
+        ),
 
-  setTemplate: (template) => set(produce((state) => { state.resume.template = template })),
-  setCustomTemplate: (patch) => set(produce((state) => { state.resume.customTemplate = { ...state.resume.customTemplate, ...patch } })),
-}), {
-  name: 'resume-builder',
-  storage: createJSONStorage(() => sessionStorage)
-}))
+      addItem: (section, item) =>
+        set(
+          produce(state => {
+            const id = crypto.randomUUID()
+            state.resume.sections[section].push({ id, ...item })
+            const idx = state.resume.sections[section].length - 1
+            state.sectionIndexes[section][id] = idx
+          }),
+        ),
 
+      updateItem: (section, id, patch) =>
+        set(
+          produce(state => {
+            const index = state.sectionIndexes[section][id]
+            if (index === undefined) return
+            const list = state.resume.sections[section]
+            list[index] = { ...list[index], ...patch }
+          }),
+        ),
+
+      removeItem: (section, id) =>
+        set(
+          produce(state => {
+            const index = state.sectionIndexes[section][id]
+            if (index === undefined) return
+            const arr = state.resume.sections[section]
+            arr.splice(index, 1)
+            delete state.sectionIndexes[section][id]
+            for (let i = index; i < arr.length; i++) {
+              state.sectionIndexes[section][arr[i].id] = i
+            }
+          }),
+        ),
+
+      reorder: (section, fromIndex, toIndex) =>
+        set(
+          produce(state => {
+            const arr = state.resume.sections[section]
+            if (
+              fromIndex < 0 ||
+              fromIndex >= arr.length ||
+              toIndex < 0 ||
+              toIndex >= arr.length
+            )
+              return
+            const [moved] = arr.splice(fromIndex, 1)
+            arr.splice(toIndex, 0, moved)
+            state.sectionIndexes[section] = Object.fromEntries(
+              arr.map((x, i) => [x.id, i]),
+            )
+          }),
+        ),
+
+      setTemplate: template =>
+        set(
+          produce(state => {
+            state.resume.template = template
+          }),
+        ),
+
+      setCustomTemplate: patch =>
+        set(
+          produce(state => {
+            state.resume.customTemplate = {
+              ...state.resume.customTemplate,
+              ...patch,
+            }
+          }),
+        ),
+
+      setSectionLayout: (section, patch) =>
+        set(
+          produce(state => {
+            const layouts = state.resume.customTemplate.sectionLayouts || {}
+            const prev = layouts[section] || {}
+            state.resume.customTemplate.sectionLayouts = {
+              ...layouts,
+              [section]: { ...prev, ...patch },
+            }
+          }),
+        ),
+
+      setUploadedTemplateHtml: html =>
+        set(
+          produce(state => {
+            state.resume.uploadedTemplateHtml = html || ''
+          }),
+        ),
+
+      clearUploadedTemplateHtml: () =>
+        set(
+          produce(state => {
+            state.resume.uploadedTemplateHtml = ''
+            if (state.resume.template === 'uploaded') {
+              state.resume.template = DEFAULT_RESUME.template
+            }
+          }),
+        ),
+    }),
+    {
+      name: 'resume-builder',
+      storage: createJSONStorage(() => sessionStorage),
+    },
+  ),
+)
 

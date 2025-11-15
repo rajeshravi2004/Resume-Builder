@@ -1,5 +1,5 @@
 import { useResumeStore } from '../store'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 const SectionList = ({ sectionKey, fields, sectionTitle }) => {
@@ -129,25 +129,89 @@ const SectionList = ({ sectionKey, fields, sectionTitle }) => {
 export const Builder = () => {
   const resume = useResumeStore(s => s.resume)
   const setBasics = useResumeStore(s => s.setBasics)
+  const reset = useResumeStore(s => s.reset)
+  const loadFromJson = useResumeStore(s => s.loadFromJson)
+  const clear = useResumeStore(s => s.clear)
+  const fileInputRef = useRef(null)
+
+  const handleDownloadJson = () => {
+    const blob = new Blob([JSON.stringify(resume, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'resume.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click()
+  }
+
+  const handleFileChange = event => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = e => {
+      try {
+        const json = JSON.parse(e.target?.result || '{}')
+        loadFromJson(json)
+      } catch {
+        alert('Invalid resume JSON file')
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-4 mb-3">
-          <Link
-            to="/"
-            className="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 transition-all duration-200 hover:scale-110 active:scale-95"
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
+            Build Your Resume
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">Fill in your details, manage sections, and export from the Preview page.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleDownloadJson}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <svg className="w-4 h-4 text-slate-600 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v16h16V8.5L14.5 4H4z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 4v4h4" />
             </svg>
-          </Link>
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-              Build Your Resume
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">Fill in your details to create a professional resume</p>
-          </div>
+            Download JSON
+          </button>
+          <button
+            onClick={handleUploadClick}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m7-7H5" />
+            </svg>
+            Load JSON
+          </button>
+          <button
+            onClick={reset}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
+            Reset Sample
+          </button>
+          <button
+            onClick={clear}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors"
+          >
+            Clear All
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
       </div>
 
