@@ -5,12 +5,20 @@ let puppeteer;
 let chromium;
 
 async function getBrowser() {
-  if (!puppeteer) {
-    puppeteer = require('puppeteer-core');
-    chromium = require('@sparticuz/chromium');
-    chromium.setGraphicsMode(false);
+  try {
+    if (!puppeteer) {
+      puppeteer = require('puppeteer-core');
+      chromium = require('@sparticuz/chromium');
+      
+      if (chromium.setGraphicsMode) {
+        chromium.setGraphicsMode(false);
+      }
+    }
+    return { puppeteer, chromium };
+  } catch (err) {
+    console.error('Failed to load dependencies:', err);
+    throw new Error(`Dependency loading failed: ${err.message}`);
   }
-  return { puppeteer, chromium };
 }
 
 function sanitizeHtmlStrict(html) {
@@ -73,31 +81,60 @@ module.exports = async (req, res) => {
     let executablePath;
     try {
       executablePath = await chrom.executablePath();
+      console.log('Chromium executable path obtained');
     } catch (chromErr) {
       console.error('Failed to get Chromium executable path:', chromErr);
       return res.status(500).json({ 
         error: 'Failed to initialize Chromium',
-        message: chromErr.message 
+        message: chromErr.message,
+        details: chromErr.stack
       });
     }
 
-    const browser = await pptr.launch({
-      args: chrom.args,
-      defaultViewport: chrom.defaultViewport,
-      executablePath: executablePath,
-      headless: chrom.headless,
-      ignoreHTTPSErrors: true,
-    });
+    let browser;
+    try {
+      const launchArgs = [
+        ...chrom.args,
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+      ];
+
+      browser = await pptr.launch({
+        args: launchArgs,
+        defaultViewport: chrom.defaultViewport || { width: 1920, height: 1080 },
+        executablePath: executablePath,
+        headless: chrom.headless !== false,
+        ignoreHTTPSErrors: true,
+      });
+      console.log('Browser launched successfully');
+    } catch (launchErr) {
+      console.error('Failed to launch browser:', launchErr);
+      return res.status(500).json({ 
+        error: 'Failed to launch browser',
+        message: launchErr.message,
+        details: launchErr.stack
+      });
+    }
 
     const page = await browser.newPage();
-    await page.setContent(safeHtml, { waitUntil: 'networkidle0' });
+    
+    await page.setContent(safeHtml, { 
+      waitUntil: 'load',
+      timeout: 10000
+    });
+
+    await page.evaluateHandle('document.fonts.ready');
 
     const defaultPdfOptions = {
       format: 'A4',
       printBackground: true,
       margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
     };
+    
     const pdfBuffer = await page.pdf({ ...defaultPdfOptions, ...(pdfOptions || {}) });
+    
+    await page.close();
     await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -105,12 +142,18 @@ module.exports = async (req, res) => {
     res.send(Buffer.from(pdfBuffer));
   } catch (err) {
     console.error('PDF export failed:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
     console.error('Error stack:', err.stack);
-    res.status(500).json({ 
-      error: 'PDF export failed', 
-      message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'PDF export failed', 
+        message: err.message,
+        name: err.name,
+        stack: process.env.VERCEL_ENV === 'development' ? err.stack : undefined
+      });
+    }
   }
 };
 
