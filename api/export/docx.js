@@ -21,7 +21,16 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { html } = req.body || {};
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON in request body' });
+      }
+    }
+
+    const { html } = body || {};
     if (!html || typeof html !== 'string') {
       return res.status(400).json({ error: 'Missing html string' });
     }
@@ -40,7 +49,12 @@ module.exports = async (req, res) => {
     res.send(Buffer.from(docxBuffer));
   } catch (err) {
     console.error('DOCX export failed:', err);
-    res.status(500).json({ error: 'DOCX export failed', message: err.message });
+    console.error('Error stack:', err.stack);
+    res.status(500).json({ 
+      error: 'DOCX export failed', 
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 };
 

@@ -42,9 +42,27 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { html, pdfOptions } = req.body || {};
-    if (!html || typeof html !== 'string' || html.length > 2_000_000) {
+    let body = req.body;
+    
+    if (!body) {
+      return res.status(400).json({ error: 'Request body is required' });
+    }
+
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON in request body' });
+      }
+    }
+
+    const { html, pdfOptions } = body;
+    if (!html || typeof html !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid html string' });
+    }
+    
+    if (html.length > 2_000_000) {
+      return res.status(400).json({ error: 'HTML string too large (max 2MB)' });
     }
 
     const safeHtml = wrapHtmlDocument(sanitizeHtmlStrict(html));
@@ -52,10 +70,21 @@ module.exports = async (req, res) => {
 
     const { puppeteer: pptr, chromium: chrom } = await getBrowser();
 
+    let executablePath;
+    try {
+      executablePath = await chrom.executablePath();
+    } catch (chromErr) {
+      console.error('Failed to get Chromium executable path:', chromErr);
+      return res.status(500).json({ 
+        error: 'Failed to initialize Chromium',
+        message: chromErr.message 
+      });
+    }
+
     const browser = await pptr.launch({
       args: chrom.args,
       defaultViewport: chrom.defaultViewport,
-      executablePath: await chrom.executablePath(),
+      executablePath: executablePath,
       headless: chrom.headless,
       ignoreHTTPSErrors: true,
     });
@@ -76,7 +105,12 @@ module.exports = async (req, res) => {
     res.send(Buffer.from(pdfBuffer));
   } catch (err) {
     console.error('PDF export failed:', err);
-    res.status(500).json({ error: 'PDF export failed', message: err.message });
+    console.error('Error stack:', err.stack);
+    res.status(500).json({ 
+      error: 'PDF export failed', 
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 };
 

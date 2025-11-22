@@ -139,11 +139,35 @@ If you see errors about `requirements.txt` or Python dependencies:
 3. Check build logs in Vercel dashboard
 4. Try clearing build cache and redeploying
 
-### API Functions Not Working
+### API Functions Not Working / Internal Server Error
 
-1. Verify `api/` directory structure is correct
-2. Check function logs in Vercel dashboard
-3. Ensure all dependencies in `api/package.json` are installed
+1. **Check Function Logs**
+   - Go to Vercel Dashboard → Your Project → Deployments → Click on the deployment
+   - Go to "Functions" tab and click on the failing function
+   - Check the logs for detailed error messages
+
+2. **Test API Endpoint**
+   - Try accessing `/api/export/test` to verify basic API connectivity
+   - This will help isolate if it's a Chromium/Puppeteer issue or general API issue
+
+3. **Common Issues:**
+   - **Chromium initialization fails**: Check that `@sparticuz/chromium` version is compatible
+   - **Memory limits**: PDF generation uses ~3GB memory, ensure your plan supports it
+   - **Timeout**: Large HTML files may exceed 30s timeout
+   - **Dependencies**: Ensure `api/package.json` has all required dependencies
+
+4. **Verify API Structure**
+   - Ensure `api/` directory structure is correct
+   - Functions should be at `api/export/pdf.js`, not nested incorrectly
+   - Check that `api/package.json` exists and has correct dependencies
+
+5. **Debug Steps:**
+   ```bash
+   # Test locally first
+   cd api
+   npm install
+   node export/test.js  # If you have a local test setup
+   ```
 
 ### PDF Export Timeout
 
