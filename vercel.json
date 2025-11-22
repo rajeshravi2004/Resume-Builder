@@ -1,7 +1,9 @@
 {
   "version": 2,
+  "framework": null,
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
+  "installCommand": "npm install --prefix client && npm install --prefix api",
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -14,13 +16,16 @@
   ],
   "functions": {
     "api/export/pdf.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "runtime": "nodejs18.x"
     },
     "api/export/docx.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "runtime": "nodejs18.x"
     },
     "api/health.js": {
-      "maxDuration": 10
+      "maxDuration": 10,
+      "runtime": "nodejs18.x"
     }
   }
 }

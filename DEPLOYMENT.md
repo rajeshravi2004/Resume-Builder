@@ -110,11 +110,34 @@ The client will automatically use `http://localhost:4000` in development and `/a
 
 ## Troubleshooting
 
+### Python/requirements.txt Error
+
+If you see errors about `requirements.txt` or Python dependencies:
+
+1. **Clear Vercel Build Cache**
+   - Go to Project Settings → General
+   - Scroll to "Clear Build Cache" and click it
+   - Redeploy
+
+2. **Verify vercel.json**
+   - Ensure `vercel.json` has `"framework": null` to prevent auto-detection
+   - Check that `installCommand` explicitly installs Node.js dependencies
+
+3. **Check for Python Files**
+   - Ensure no `requirements.txt` exists in the project
+   - Remove any `.py` files if not needed
+   - Check `.vercelignore` includes Python-related patterns
+
+4. **Force Node.js Runtime**
+   - In Vercel dashboard: Settings → General → Node.js Version (set to 18.x or 20.x)
+   - Or add `"runtime": "nodejs18.x"` to functions in `vercel.json`
+
 ### Build Fails
 
 1. Check that all dependencies are listed in `package.json` files
 2. Ensure Node.js version is compatible (Vercel uses Node 18.x by default)
 3. Check build logs in Vercel dashboard
+4. Try clearing build cache and redeploying
 
 ### API Functions Not Working
 

@@ -6,4 +6,12 @@ client/node_modules
 .env.local
 *.log
 .DS_Store
+*.py
+*.pyc
+__pycache__
+requirements.txt
+*.whl
+.python-version
+venv/
+env/
 
