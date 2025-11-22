@@ -14,7 +14,8 @@ export const Preview = () => {
     setIsExporting(true)
     try {
       const endpoint = type === 'pdf' ? '/export/pdf' : '/export/docx'
-      const resp = await fetch(`http://localhost:4000${endpoint}`, {
+      const apiUrl = import.meta.env.PROD ? '/api' : 'http://localhost:4000'
+      const resp = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: renderedHtml, chromePath })

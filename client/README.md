@@ -1,14 +1,28 @@
 # Resume Builder Client
 
-Run
+## Local Development
 
 1. Start API server (in `server/`):
 
+   ```bash
    npm run dev
+   ```
 
 2. Start client (in `client/`):
 
+   ```bash
    npm run dev
+   ```
+
+## Deployment to Vercel
+
+See [DEPLOYMENT.md](../DEPLOYMENT.md) for detailed instructions on deploying to Vercel.
+
+Quick steps:
+1. Push your code to Git (GitHub, GitLab, or Bitbucket)
+2. Import the project in [Vercel Dashboard](https://vercel.com/new)
+3. Vercel will auto-detect settings from `vercel.json`
+4. Deploy!
 
 Builder
 
