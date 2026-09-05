@@ -12,4 +12,4 @@ server/.env
 server/.tmp-ui-check/
 .DS_Store
 npm-debug.log*
-
+.vercel
