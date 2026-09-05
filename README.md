@@ -11,7 +11,7 @@ Resume Studio is a production-oriented resume workspace for individuals, familie
 - Twelve professional, ATS-conscious starting templates
 - Live ATS analysis with content, parser-safety, keyword-match, and per-template projected scores
 - Job-description comparison with matched and missing keyword guidance
-- Private LinkedIn PDF/text import with an editable review step before creating a resume
+- LinkedIn profile URL import using OpenAI web search, factual extraction, and an editable review step
 - Editable colours, body and heading fonts, font sizes, line height, margins, spacing, header alignment, photo, and one/two-column layout
 - Per-section naming, visibility, order, and standard/timeline/compact presentation
 - AI refinement for a whole field or selected text
@@ -20,6 +20,7 @@ Resume Studio is a production-oriented resume workspace for individuals, familie
 - Responsive desktop/mobile experience
 - Supabase email/password authentication, cloud persistence, and row-level security
 - Google OAuth through Supabase Auth
+- Optional per-session OpenAI API key that is never written to Supabase
 - Branded in-app confirmation and notice dialogs instead of native browser prompts
 - Local-first demo mode when Supabase is not configured
 

@@ -1,4 +1,11 @@
 const apiBase = import.meta.env.PROD ? '/api' : 'http://localhost:4000'
+const sessionKeyName = 'resume-studio-openai-key'
+
+export const getSessionAiKey = () => sessionStorage.getItem(sessionKeyName) || ''
+export const setSessionAiKey = value => {
+  if (value) sessionStorage.setItem(sessionKeyName, value)
+  else sessionStorage.removeItem(sessionKeyName)
+}
 
 const parseError = async response => {
   const payload = await response.json().catch(() => ({}))
@@ -6,9 +13,10 @@ const parseError = async response => {
 }
 
 export const requestAi = async payload => {
+  const sessionKey = getSessionAiKey()
   const response = await fetch(`${apiBase}/ai`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(sessionKey ? { 'X-OpenAI-API-Key': sessionKey } : {}) },
     body: JSON.stringify(payload),
   })
   if (!response.ok) return parseError(response)

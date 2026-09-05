@@ -3,6 +3,7 @@ const cors = require('cors');
 const sanitizeHtml = require('sanitize-html');
 const puppeteer = require('puppeteer');
 const { buildResumeDocx } = require('../api/export/build-docx');
+const aiHandler = require('../api/ai');
 require('dotenv').config();
 
 const app = express();
@@ -43,39 +44,7 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, aiConfigured: Boolean(process.env.OPENAI_API_KEY), chromePath: getChromePath() });
 });
 
-app.post('/ai', async (req, res) => {
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: 'AI is not configured. Add OPENAI_API_KEY to the server environment.' });
-  }
-  try {
-    const { type, text, instruction, context, prompt } = req.body || {};
-    if (!['refine', 'design'].includes(type)) return res.status(400).json({ error: 'Unsupported AI request' });
-    if (type === 'refine' && (!text || text.length > 15000)) return res.status(400).json({ error: 'Text is required and must be under 15,000 characters.' });
-    if (type === 'design' && (!prompt || prompt.length > 3000)) return res.status(400).json({ error: 'A design prompt is required.' });
-
-    const instructions = type === 'refine'
-      ? 'You are a meticulous executive resume editor. Return only the revised text. Preserve factual accuracy, dates, technologies, names, and metrics. Never invent achievements.'
-      : 'You are a senior editorial designer creating ATS-conscious resume systems. Return ONLY valid JSON without markdown. Use accessible contrast and print-safe choices.';
-    const input = type === 'refine'
-      ? `Context: ${String(context || 'resume content').slice(0, 500)}\nInstruction: ${String(instruction || 'Improve clarity and impact').slice(0, 1000)}\n\nText:\n${text}`
-      : `Create an editable resume design from this request: ${prompt}\nReturn JSON exactly with this shape: {"name":"short design name","design":{"primaryColor":"#hex","accentColor":"#hex","textColor":"#hex","fontFamily":"Inter, Arial, Georgia, Times New Roman, Trebuchet, or Garamond with fallbacks","headingFont":"same options","fontSize":number 8.5-13,"nameSize":number 24-46,"lineHeight":number 1.2-1.8,"pageMargin":number 20-56,"sectionSpacing":number 8-30,"itemSpacing":number 5-18,"layout":"one-column or two-column","sidebarSide":"left or right","sidebarWidth":number 25-40,"headerAlign":"left or center"}}`;
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: process.env.OPENAI_MODEL || 'gpt-5-mini', instructions, input, store: false }),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error?.message || 'OpenAI request failed');
-    const output = payload.output_text || (payload.output || []).flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text || '';
-    if (!output) throw new Error('The AI response was empty.');
-    if (type === 'refine') return res.json({ text: output.trim() });
-    const cleaned = output.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    return res.json(JSON.parse(cleaned));
-  } catch (error) {
-    console.error('AI request failed:', error);
-    return res.status(500).json({ error: error.message || 'AI request failed' });
-  }
-});
+app.post('/ai', aiHandler);
 
 app.post('/export/pdf', async (req, res) => {
   try {
