@@ -1,361 +1,70 @@
-import { useResumeStore } from '../store'
-import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { BadgeCheck, Briefcase, ChevronDown, ChevronUp, CircleUserRound, FileText, FolderKanban, GraduationCap, GripVertical, Heart, Languages, Link2, Mail, MapPin, Phone, Plus, RefreshCw, Sparkles, Trash2, WandSparkles } from 'lucide-react'
+import { AiTextButton } from './AiAssist'
+import { ResumeCanvas } from './ResumeCanvas'
+import { SECTION_FIELDS, SECTION_META, selectActiveResume, useResumeStore } from '../store'
 
-const SectionList = ({ sectionKey, fields, sectionTitle }) => {
-  const items = useResumeStore(s => s.resume.sections[sectionKey])
+const icons = { experience: Briefcase, projects: FolderKanban, education: GraduationCap, skills: WandSparkles, certifications: BadgeCheck, languages: Languages, interests: Heart }
+
+function Field({ field, value, onChange, context }) {
+  const ref = useRef(null)
+  return <label className={field.multiline ? 'field full' : 'field'}><span>{field.label}</span>{field.multiline ? <div className="textarea-wrap"><textarea ref={ref} rows={4} value={value || ''} placeholder={field.placeholder} onChange={e => onChange(e.target.value)} /><AiTextButton value={value || ''} onApply={onChange} textareaRef={ref} context={context} /></div> : <input value={value || ''} placeholder={field.placeholder} onChange={e => onChange(e.target.value)} />}</label>
+}
+
+function SectionEditor({ sectionKey, active, onToggle }) {
+  const items = useResumeStore(s => selectActiveResume(s)?.data.sections[sectionKey] || [])
   const addItem = useResumeStore(s => s.addItem)
   const updateItem = useResumeStore(s => s.updateItem)
   const removeItem = useResumeStore(s => s.removeItem)
-  const reorder = useResumeStore(s => s.reorder)
+  const moveItem = useResumeStore(s => s.moveItem)
+  const fields = SECTION_FIELDS[sectionKey]
+  const Icon = icons[sectionKey]
 
-  const [draft, setDraft] = useState({})
-  const [isExpanded, setIsExpanded] = useState(true)
-
-  return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden hover:shadow-xl transition-all duration-300">
-      <div
-        className="px-6 py-4 bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/30 border-b border-slate-200/60 cursor-pointer group"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{sectionTitle}</h3>
-          <svg
-            className={`w-4 h-4 text-slate-400 transition-all duration-300 ${isExpanded ? 'rotate-180 text-blue-600' : 'group-hover:text-slate-600'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-      {isExpanded && (
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fields.map(f => (
-              <div key={f.name}>
-                <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-                  {f.label || f.name}
-                </label>
-                <input
-                  type={f.type || 'text'}
-                  placeholder={f.placeholder || f.name}
-                  value={draft[f.name] || ''}
-                  onChange={e => setDraft({ ...draft, [f.name]: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-                />
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => {
-              addItem(sectionKey, draft)
-              setDraft({})
-            }}
-            className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              Add {sectionTitle}
-            </span>
-          </button>
-
-          {items.length > 0 && (
-            <div className="mt-6 space-y-3 pt-6 border-t border-slate-200">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Added Items ({items.length})
-              </h4>
-              {items.map((it, idx) => (
-                <div key={it.id} className="bg-gradient-to-br from-slate-50 to-white border border-slate-200/60 rounded-xl p-4 space-y-3 hover:border-blue-300 transition-all duration-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {fields.map(f => (
-                      <div key={f.name}>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">
-                          {f.label || f.name}
-                        </label>
-                        <input
-                          type={f.type || 'text'}
-                          value={it[f.name] || ''}
-                          onChange={e => updateItem(sectionKey, it.id, { [f.name]: e.target.value })}
-                          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all text-slate-800"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 pt-3 border-t border-slate-200">
-                    <button
-                      onClick={() => removeItem(sectionKey, it.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
-                    <button
-                      disabled={idx === 0}
-                      onClick={() => reorder(sectionKey, idx, idx - 1)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-                      </svg>
-                      Up
-                    </button>
-                    <button
-                      disabled={idx === items.length - 1}
-                      onClick={() => reorder(sectionKey, idx, idx + 1)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Down
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
+  return <section className={`editor-section ${active ? 'expanded' : ''}`} id={`section-${sectionKey}`}>
+    <button type="button" className="editor-section-head" onClick={onToggle}><span className="section-icon"><Icon size={17} /></span><span><strong>{SECTION_META[sectionKey].label}</strong><small>{items.length} {items.length === 1 ? 'entry' : 'entries'}</small></span><ChevronDown size={18} /></button>
+    {active && <div className="editor-section-body">
+      {items.map((item, index) => <article className="entry-card" key={item.id}><div className="entry-top"><span className="drag-handle"><GripVertical size={16} /></span><strong>{item[fields[0].name] || `Untitled ${SECTION_META[sectionKey].label.toLowerCase()}`}</strong><div className="entry-actions"><button title="Move up" disabled={index === 0} onClick={() => moveItem(sectionKey, index, index - 1)}><ChevronUp size={15} /></button><button title="Move down" disabled={index === items.length - 1} onClick={() => moveItem(sectionKey, index, index + 1)}><ChevronDown size={15} /></button><button className="danger-icon" title="Delete" onClick={() => removeItem(sectionKey, item.id)}><Trash2 size={15} /></button></div></div><div className="fields-grid">{fields.map(field => <Field key={field.name} field={field} value={item[field.name]} context={`${SECTION_META[sectionKey].label}: ${item[fields[0].name] || ''}`} onChange={value => updateItem(sectionKey, item.id, { [field.name]: value })} />)}</div></article>)}
+      <button className="add-entry" onClick={() => addItem(sectionKey, Object.fromEntries(fields.map(field => [field.name, ''])))}><Plus size={16} /> Add {SECTION_META[sectionKey].label.toLowerCase()} entry</button>
+    </div>}
+  </section>
 }
 
 export const Builder = () => {
-  const resume = useResumeStore(s => s.resume)
+  const resume = useResumeStore(selectActiveResume)
   const setBasics = useResumeStore(s => s.setBasics)
-  const reset = useResumeStore(s => s.reset)
-  const loadFromJson = useResumeStore(s => s.loadFromJson)
-  const clear = useResumeStore(s => s.clear)
-  const fileInputRef = useRef(null)
+  const syncProfileToResume = useResumeStore(s => s.syncProfileToResume)
+  const renameResume = useResumeStore(s => s.renameResume)
+  const [openSections, setOpenSections] = useState(['basics', 'experience'])
+  const summaryRef = useRef(null)
+  if (!resume) return null
 
-  const handleDownloadJson = () => {
-    const blob = new Blob([JSON.stringify(resume, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'resume.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+  const basics = resume.data.basics
+  const completed = [basics.fullName, basics.title, basics.email, basics.summary, resume.data.sections.experience.length, resume.data.sections.education.length, resume.data.sections.skills.length].filter(Boolean).length
+  const completion = Math.round((completed / 7) * 100)
+  const toggle = key => setOpenSections(current => current.includes(key) ? current.filter(item => item !== key) : [...current, key])
 
-  const handleUploadClick = () => {
-    if (fileInputRef.current) fileInputRef.current.click()
-  }
+  return <div className="builder-layout">
+    <div className="builder-panel">
+      <div className="editor-titlebar"><div><span className="eyebrow">Content editor</span><input className="resume-name-input" value={resume.name} onChange={e => renameResume(resume.id, e.target.value)} aria-label="Resume name" /><p>Tailor the story. Your changes appear in the live page.</p></div><div className="score-ring" style={{ '--score': `${completion * 3.6}deg` }}><span>{completion}%</span><small>Complete</small></div></div>
+      <div className="profile-sync"><div className="section-icon"><CircleUserRound size={18} /></div><div><strong>Using this person’s master profile</strong><p>Refresh identity fields without changing tailored experience.</p></div><button className="button secondary compact" onClick={syncProfileToResume}><RefreshCw size={14} /> Sync details</button></div>
 
-  const handleFileChange = event => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = e => {
-      try {
-        const json = JSON.parse(e.target?.result || '{}')
-        loadFromJson(json)
-      } catch {
-        alert('Invalid resume JSON file')
-      }
-    }
-    reader.readAsText(file)
-    event.target.value = ''
-  }
+      <section className={`editor-section ${openSections.includes('basics') ? 'expanded' : ''}`} id="section-basics">
+        <button type="button" className="editor-section-head" onClick={() => toggle('basics')}><span className="section-icon"><FileText size={17} /></span><span><strong>Profile & summary</strong><small>Your header and professional introduction</small></span><ChevronDown size={18} /></button>
+        {openSections.includes('basics') && <div className="editor-section-body"><div className="fields-grid basics-grid">
+          <label className="field"><span>Full name</span><input value={basics.fullName} onChange={e => setBasics({ fullName: e.target.value })} placeholder="Your full name" /></label>
+          <label className="field"><span>Professional headline</span><input value={basics.title} onChange={e => setBasics({ title: e.target.value })} placeholder="Your current or target role" /></label>
+          <label className="field icon-field"><span>Email</span><div><Mail size={15} /><input type="email" value={basics.email} onChange={e => setBasics({ email: e.target.value })} placeholder="name@example.com" /></div></label>
+          <label className="field icon-field"><span>Phone</span><div><Phone size={15} /><input value={basics.phone} onChange={e => setBasics({ phone: e.target.value })} placeholder="+91 98765 43210" /></div></label>
+          <label className="field icon-field"><span>Location</span><div><MapPin size={15} /><input value={basics.location} onChange={e => setBasics({ location: e.target.value })} placeholder="City, Country" /></div></label>
+          <label className="field icon-field"><span>Portfolio</span><div><Link2 size={15} /><input value={basics.website} onChange={e => setBasics({ website: e.target.value })} placeholder="portfolio.com" /></div></label>
+          <label className="field full"><span>LinkedIn</span><input value={basics.linkedin || ''} onChange={e => setBasics({ linkedin: e.target.value })} placeholder="linkedin.com/in/yourname" /></label>
+          <label className="field full"><span>Professional summary</span><div className="textarea-wrap"><textarea ref={summaryRef} rows={5} value={basics.summary} onChange={e => setBasics({ summary: e.target.value })} placeholder="Write a focused summary of your experience and value…" /><div className="field-hint"><span>{basics.summary.length} characters</span><AiTextButton value={basics.summary} onApply={value => setBasics({ summary: value })} textareaRef={summaryRef} context={`${basics.title} professional summary`} /></div></div></label>
+        </div></div>}
+      </section>
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-            Build Your Resume
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">Fill in your details, manage sections, and export from the Preview page.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleDownloadJson}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v16h16V8.5L14.5 4H4z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 4v4h4" />
-            </svg>
-            Download JSON
-          </button>
-          <button
-            onClick={handleUploadClick}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m7-7H5" />
-            </svg>
-            Load JSON
-          </button>
-          <button
-            onClick={reset}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            Reset Sample
-          </button>
-          <button
-            onClick={clear}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors"
-          >
-            Clear All
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-      </div>
-
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden hover:shadow-xl transition-all duration-300">
-        <div className="px-6 py-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-b border-slate-200/60">
-          <h3 className="text-base font-bold text-slate-800">Basic Information</h3>
-        </div>
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Full Name</label>
-              <input
-                placeholder="John Doe"
-                value={resume.basics.fullName}
-                onChange={e => setBasics({ fullName: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Title</label>
-              <input
-                placeholder="Software Engineer"
-                value={resume.basics.title}
-                onChange={e => setBasics({ title: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Email</label>
-              <input
-                type="email"
-                placeholder="john@example.com"
-                value={resume.basics.email}
-                onChange={e => setBasics({ email: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Phone</label>
-              <input
-                type="tel"
-                placeholder="+1 (555) 123-4567"
-                value={resume.basics.phone}
-                onChange={e => setBasics({ phone: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Location</label>
-              <input
-                placeholder="New York, NY"
-                value={resume.basics.location}
-                onChange={e => setBasics({ location: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Website</label>
-              <input
-                type="url"
-                placeholder="https://johndoe.com"
-                value={resume.basics.website}
-                onChange={e => setBasics({ website: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Professional Summary</label>
-            <textarea
-              placeholder="Write a brief summary about yourself..."
-              value={resume.basics.summary}
-              onChange={e => setBasics({ summary: e.target.value })}
-              rows={4}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:bg-white transition-all duration-200 resize-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      <SectionList
-        sectionKey="experience"
-        sectionTitle="Experience"
-        fields={[
-          { name: 'role', label: 'Job Title', placeholder: 'Senior Developer' },
-          { name: 'company', label: 'Company', placeholder: 'Tech Corp' },
-          { name: 'period', label: 'Period', placeholder: '2020 - Present' },
-          { name: 'summary', label: 'Description', placeholder: 'Key responsibilities and achievements...' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="projects"
-        sectionTitle="Projects"
-        fields={[
-          { name: 'name', label: 'Project Name', placeholder: 'Project Name' },
-          { name: 'tech', label: 'Technologies', placeholder: 'React, Node.js, MongoDB' },
-          { name: 'description', label: 'Description', placeholder: 'Project description...' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="education"
-        sectionTitle="Education"
-        fields={[
-          { name: 'degree', label: 'Degree', placeholder: 'Bachelor of Science' },
-          { name: 'school', label: 'School/University', placeholder: 'University Name' },
-          { name: 'period', label: 'Period', placeholder: '2016 - 2020' },
-          { name: 'score', label: 'Score/GPA', placeholder: '3.8 GPA' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="skills"
-        sectionTitle="Skills"
-        fields={[
-          { name: 'name', label: 'Skill Name', placeholder: 'JavaScript' },
-          { name: 'level', label: 'Proficiency Level', placeholder: 'Expert' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="certifications"
-        sectionTitle="Certifications"
-        fields={[
-          { name: 'name', label: 'Certification Name', placeholder: 'AWS Certified Solutions Architect' },
-          { name: 'year', label: 'Year', placeholder: '2023', type: 'number' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="languages"
-        sectionTitle="Languages"
-        fields={[
-          { name: 'name', label: 'Language', placeholder: 'English' },
-          { name: 'level', label: 'Proficiency', placeholder: 'Native' }
-        ]}
-      />
-
-      <SectionList
-        sectionKey="interests"
-        sectionTitle="Interests"
-        fields={[{ name: 'name', label: 'Interest', placeholder: 'Photography' }]}
-      />
+      {Object.keys(SECTION_META).map(key => <SectionEditor key={key} sectionKey={key} active={openSections.includes(key)} onToggle={() => toggle(key)} />)}
+      <div className="editor-tip"><Sparkles size={17} /><div><strong>Tailor for the role</strong><p>Mirror the language of the job description, but keep every claim truthful and specific.</p></div></div>
     </div>
-  )
+    <aside className="live-preview-panel"><div className="preview-label"><span><i /> Live preview</span><small>A4 · {resume.design.template}</small></div><ResumeCanvas resume={resume} scale={0.66} /></aside>
+  </div>
 }

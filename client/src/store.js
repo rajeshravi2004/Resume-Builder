@@ -2,268 +2,275 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { produce } from 'immer'
 
-const DEFAULT_RESUME = {
-  basics: {
-    fullName: 'RAJESH R',
-    title: 'Full Stack Developer & AI Enthusiast',
-    email: 'ravirajesh988@gmail.com',
-    phone: '+91-8883761709',
-    location: 'Tamilnadu, India',
-    website: 'https://github.com/rajeshravi2004/portfolio',
-    summary:
-      'Passionate Junior Full Stack Developer with strong foundation in modern web technologies and AI/ML. Specialized in responsive web apps using React, Node.js, and Python; experienced in healthcare tech and AI applications.',
-  },
-  sections: {
-    experience: [
-      { id: 'exp1', role: 'Junior Full Stack Developer', company: 'Carescribe Healthcare Private Limited', period: 'July 2025 - Present, Chennai', summary: 'Built CareScribe, a full-stack medical transcription platform; implemented PostgreSQL, Express, Node.js, React, WebSockets, Cloud Storage, Pub/Sub; Swagger docs and API key security; integrated Python chat APIs.' },
-      { id: 'exp2', role: 'Fullstack Internship Developer', company: 'Carescribe Healthcare Private Limited', period: 'Mar 2025 - Jun 2025, Chennai', summary: 'Developed healthcare application with Node.js and React; OPD/IPD/discharge summary features from conversations; integrated LLM and prompt engineering; worked with React, Node.js, Python, PostgreSQL, GCP, Docker, Kubernetes, PubSub, WebSockets.' },
-      { id: 'exp3', role: 'AI/ML Internship Scholar', company: 'AIIRF-EDII', period: 'Jun 2024 - Jul 2024, Chidambaram', summary: 'Learned clusters, regression, deep learning; hands-on with ML algorithms and data processing.' },
-      { id: 'exp4', role: 'UI/UX Internship Scholar', company: 'AIIRF-EDII', period: 'Jun 2023 - Jul 2023, Chidambaram', summary: 'App landing templates, project management; better understanding of UI/UX principles.' }
-    ],
-    projects: [
-      { id: 'proj1', name: 'AI Assistant with Document Analysis', tech: 'FastAPI, Google Gemini AI, Python, React, FAISS, LangChain', description: 'AI chatbot with general and doc analysis modes; uploads (PDF, DOCX, TXT, CSV, XLSX); FAISS vector search; session-based chat; auth and real-time indexing; responsive UI.' }
-    ],
-    education: [
-      { id: 'edu1', degree: 'BE Information Technology', school: 'Annamalai University', period: '2021 - 2025', score: 'CGPA: 8.45/10' },
-      { id: 'edu2', degree: 'Higher Secondary', school: 'DVC Higher Secondary School', period: '2020 - 2021', score: '89.9%' },
-      { id: 'edu3', degree: 'Matriculation', school: 'DVC Higher Secondary School', period: '2018 - 2019', score: '92.0%' }
-    ],
-    skills: [
-      { id: 'sk1', name: 'Frontend', level: 'React, JavaScript, HTML5, CSS3, Tailwind CSS' },
-      { id: 'sk2', name: 'Backend', level: 'Node.js, Express.js, Python, FastAPI, REST, WebSockets, PostgreSQL' },
-      { id: 'sk3', name: 'Cloud & DevOps', level: 'GCP, Docker, Kubernetes, Cloud Storage, Pub/Sub, API Security' },
-      { id: 'sk4', name: 'AI & ML', level: 'Gemini, LangChain, LLM Integration, Prompt Engineering, FAISS, Chat APIs' }
-    ],
-    certifications: [
-      { id: 'cert1', name: 'Diploma in Computer Application (DCA)', year: '2021' },
-      { id: 'cert2', name: 'Typewriting English Junior', year: '2019' }
-    ],
-    languages: [
-      { id: 'lang1', name: 'English', level: 'Professional' },
-      { id: 'lang2', name: 'Tamil', level: 'Native' },
-      { id: 'lang3', name: 'Hindi', level: 'Conversational' }
-    ],
-    interests: [
-      { id: 'in1', name: 'AI and Machine Learning research' },
-      { id: 'in2', name: 'Open source contributions' },
-      { id: 'in3', name: 'Healthcare technology innovation' },
-      { id: 'in4', name: 'Continuous learning and skill development' },
-      { id: 'in5', name: 'Problem-solving challenges' },
-    ],
-  },
-  template: 'classic',
-  customTemplate: {
-    primaryColor: '#1e40af',
-    accentColor: '#2563eb',
-    fontFamily: 'Inter, system-ui, Arial',
-    layout: 'one-column',
-    customCSS: '',
-    sectionLayouts: {
-      experience: { variant: 'cards', hidden: false, title: 'Experience' },
-      projects: { variant: 'cards', hidden: false, title: 'Projects' },
-      education: { variant: 'cards', hidden: false, title: 'Education' },
-      skills: { variant: 'tags', hidden: false, title: 'Skills' },
-      certifications: { variant: 'cards', hidden: false, title: 'Certifications' },
-      languages: { variant: 'list', hidden: false, title: 'Languages' },
-      interests: { variant: 'tags', hidden: false, title: 'Interests' },
-    },
-  },
-  uploadedTemplateHtml: '',
+const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+
+export const SECTION_META = {
+  experience: { label: 'Experience', icon: 'Briefcase' },
+  projects: { label: 'Projects', icon: 'FolderKanban' },
+  education: { label: 'Education', icon: 'GraduationCap' },
+  skills: { label: 'Skills', icon: 'WandSparkles' },
+  certifications: { label: 'Certifications', icon: 'BadgeCheck' },
+  languages: { label: 'Languages', icon: 'Languages' },
+  interests: { label: 'Interests', icon: 'Heart' },
 }
 
-const buildSectionIndexes = sections =>
-  Object.fromEntries(
-    Object.keys(sections).map(key => [
-      key,
-      Object.fromEntries(sections[key].map((item, index) => [item.id, index])),
-    ]),
-  )
+export const SECTION_FIELDS = {
+  experience: [
+    { name: 'role', label: 'Job title', placeholder: 'Senior Product Designer' },
+    { name: 'company', label: 'Company', placeholder: 'Acme Inc.' },
+    { name: 'period', label: 'Dates & location', placeholder: '2022 — Present · Chennai' },
+    { name: 'summary', label: 'Impact & achievements', placeholder: 'Led a cross-functional team…', multiline: true, ai: true },
+  ],
+  projects: [
+    { name: 'name', label: 'Project', placeholder: 'Project name' },
+    { name: 'tech', label: 'Tools / technologies', placeholder: 'React, Node.js, PostgreSQL' },
+    { name: 'description', label: 'Description', placeholder: 'What you built and the outcome…', multiline: true, ai: true },
+  ],
+  education: [
+    { name: 'degree', label: 'Degree', placeholder: 'B.E. Information Technology' },
+    { name: 'school', label: 'Institution', placeholder: 'Annamalai University' },
+    { name: 'period', label: 'Dates', placeholder: '2021 — 2025' },
+    { name: 'score', label: 'Score', placeholder: 'CGPA 8.45 / 10' },
+  ],
+  skills: [
+    { name: 'name', label: 'Category', placeholder: 'Engineering' },
+    { name: 'level', label: 'Skills', placeholder: 'React, TypeScript, Node.js' },
+  ],
+  certifications: [
+    { name: 'name', label: 'Certification', placeholder: 'AWS Solutions Architect' },
+    { name: 'year', label: 'Issuer / year', placeholder: 'Amazon · 2025' },
+  ],
+  languages: [
+    { name: 'name', label: 'Language', placeholder: 'English' },
+    { name: 'level', label: 'Proficiency', placeholder: 'Professional' },
+  ],
+  interests: [{ name: 'name', label: 'Interest', placeholder: 'Open source' }],
+}
 
-const emptyResumeFromDefault = () => ({
-  basics: {
-    fullName: '',
-    title: '',
-    email: '',
-    phone: '',
-    location: '',
-    website: '',
-    summary: '',
-  },
-  sections: Object.fromEntries(
-    Object.keys(DEFAULT_RESUME.sections).map(key => [key, []]),
+export const DEFAULT_DESIGN = {
+  template: 'executive',
+  primaryColor: '#172554',
+  accentColor: '#c2410c',
+  textColor: '#1f2937',
+  fontFamily: 'Inter, Arial, sans-serif',
+  headingFont: 'Inter, Arial, sans-serif',
+  fontSize: 10.5,
+  nameSize: 32,
+  lineHeight: 1.48,
+  pageMargin: 32,
+  sectionSpacing: 16,
+  itemSpacing: 10,
+  layout: 'one-column',
+  sidebarSide: 'left',
+  sidebarWidth: 31,
+  headerAlign: 'left',
+  showPhoto: false,
+  photoUrl: '',
+  sectionOrder: Object.keys(SECTION_META),
+  sectionSettings: Object.fromEntries(
+    Object.entries(SECTION_META).map(([key, value]) => [key, {
+      title: value.label,
+      hidden: false,
+      variant: key === 'skills' || key === 'interests' ? 'compact' : 'standard',
+    }]),
   ),
-  template: DEFAULT_RESUME.template,
-  customTemplate: { ...DEFAULT_RESUME.customTemplate },
-  uploadedTemplateHtml: '',
+  customCSS: '',
+  generatedLabel: '',
+}
+
+const sampleBasics = {
+  fullName: 'Rajesh Ravi',
+  title: 'Full Stack Developer',
+  email: 'rajesh@example.com',
+  phone: '+91 98765 43210',
+  location: 'Chennai, India',
+  website: 'rajeshravi.dev',
+  linkedin: 'linkedin.com/in/rajeshravi',
+  summary: 'Full stack developer building reliable, human-centred web products across healthcare and applied AI. Experienced in taking ideas from API design through polished React interfaces and production deployment.',
+}
+
+const sampleSections = {
+  experience: [
+    { id: 'exp-1', role: 'Junior Full Stack Developer', company: 'CareScribe Healthcare', period: 'Jul 2025 — Present · Chennai', summary: 'Built and shipped clinical documentation workflows with React, Node.js and PostgreSQL. Improved real-time collaboration using WebSockets and productionised AI-assisted transcription services.' },
+    { id: 'exp-2', role: 'Full Stack Engineering Intern', company: 'CareScribe Healthcare', period: 'Mar 2025 — Jun 2025 · Chennai', summary: 'Developed OPD, IPD and discharge-summary experiences, integrated LLM services, and contributed reusable API documentation and containerised deployments.' },
+  ],
+  projects: [
+    { id: 'project-1', name: 'Document Intelligence Assistant', tech: 'FastAPI · React · FAISS · LangChain', description: 'Created a session-based assistant that searches PDF, DOCX, spreadsheet and text uploads with semantic retrieval and source-aware responses.' },
+  ],
+  education: [{ id: 'edu-1', degree: 'B.E. Information Technology', school: 'Annamalai University', period: '2021 — 2025', score: 'CGPA 8.45 / 10' }],
+  skills: [
+    { id: 'skill-1', name: 'Frontend', level: 'React, JavaScript, HTML, CSS, Tailwind' },
+    { id: 'skill-2', name: 'Backend & Data', level: 'Node.js, Express, Python, FastAPI, PostgreSQL' },
+    { id: 'skill-3', name: 'Cloud & AI', level: 'GCP, Docker, Kubernetes, LLM integration, FAISS' },
+  ],
+  certifications: [{ id: 'cert-1', name: 'Diploma in Computer Application', year: '2021' }],
+  languages: [{ id: 'lang-1', name: 'Tamil', level: 'Native' }, { id: 'lang-2', name: 'English', level: 'Professional' }],
+  interests: [{ id: 'interest-1', name: 'Healthcare technology' }, { id: 'interest-2', name: 'Open source' }],
+}
+
+export const createBlankResumeData = (basics = {}) => ({
+  basics: { fullName: '', title: '', email: '', phone: '', location: '', website: '', linkedin: '', summary: '', ...basics },
+  sections: Object.fromEntries(Object.keys(SECTION_META).map(key => [key, []])),
 })
+
+const seedWorkspace = () => {
+  const profileId = 'profile-rajesh'
+  const resumeId = 'resume-product'
+  return {
+    profiles: [{ id: profileId, name: 'Rajesh Ravi', headline: 'Full Stack Developer', email: sampleBasics.email, phone: sampleBasics.phone, location: sampleBasics.location, website: sampleBasics.website, createdAt: new Date().toISOString() }],
+    resumes: [{ id: resumeId, profileId, name: 'Full Stack Developer', targetRole: 'Product engineering roles', status: 'Draft', updatedAt: new Date().toISOString(), data: { basics: sampleBasics, sections: sampleSections }, design: DEFAULT_DESIGN }],
+    activeProfileId: profileId,
+    activeResumeId: resumeId,
+  }
+}
+
+const touch = resume => { resume.updatedAt = new Date().toISOString() }
 
 export const useResumeStore = create(
   persist(
     (set, get) => ({
-      resume: DEFAULT_RESUME,
-      sectionIndexes: buildSectionIndexes(DEFAULT_RESUME.sections),
+      ...seedWorkspace(),
+      cloudStatus: 'local',
+      lastCloudSave: null,
 
-      reset: () =>
-        set({
-          resume: DEFAULT_RESUME,
-          sectionIndexes: buildSectionIndexes(DEFAULT_RESUME.sections),
-        }),
-
-      clear: () => {
-        const cleared = emptyResumeFromDefault()
-        set({
-          resume: cleared,
-          sectionIndexes: buildSectionIndexes(cleared.sections),
-        })
+      activeResume: () => get().resumes.find(item => item.id === get().activeResumeId),
+      setActiveResume: id => set(state => ({ activeResumeId: id, activeProfileId: state.resumes.find(r => r.id === id)?.profileId || state.activeProfileId })),
+      setActiveProfile: id => set({ activeProfileId: id }),
+      addProfile: values => {
+        const id = uid()
+        set(produce(state => {
+          state.profiles.push({ id, name: values.name || 'Untitled person', headline: values.headline || '', email: values.email || '', phone: values.phone || '', location: values.location || '', website: values.website || '', createdAt: new Date().toISOString() })
+          state.activeProfileId = id
+        }))
+        return id
       },
-
-      loadFromJson: incoming =>
-        set(
-          produce(state => {
-            if (!incoming || typeof incoming !== 'object') return
-            const next = {
-              basics: {
-                ...emptyResumeFromDefault().basics,
-                ...(incoming.basics || {}),
-              },
-              sections: Object.fromEntries(
-                Object.keys(emptyResumeFromDefault().sections).map(key => {
-                  const list = Array.isArray(incoming.sections?.[key])
-                    ? incoming.sections[key]
-                    : []
-                  const normalized = list.map(item => ({
-                    ...item,
-                    id: item.id || crypto.randomUUID(),
-                  }))
-                  return [key, normalized]
-                }),
-              ),
-              template: incoming.template || DEFAULT_RESUME.template,
-              customTemplate: {
-                ...DEFAULT_RESUME.customTemplate,
-                ...(incoming.customTemplate || {}),
-                sectionLayouts: {
-                  ...DEFAULT_RESUME.customTemplate.sectionLayouts,
-                  ...(incoming.customTemplate?.sectionLayouts || {}),
-                },
-              },
-              uploadedTemplateHtml: incoming.uploadedTemplateHtml || '',
-            }
-            state.resume = next
-            state.sectionIndexes = buildSectionIndexes(next.sections)
-          }),
-        ),
-
-      setBasics: basics =>
-        set(
-          produce(state => {
-            state.resume.basics = { ...state.resume.basics, ...basics }
-          }),
-        ),
-
-      addItem: (section, item) =>
-        set(
-          produce(state => {
-            const id = crypto.randomUUID()
-            state.resume.sections[section].push({ id, ...item })
-            const idx = state.resume.sections[section].length - 1
-            state.sectionIndexes[section][id] = idx
-          }),
-        ),
-
-      updateItem: (section, id, patch) =>
-        set(
-          produce(state => {
-            const index = state.sectionIndexes[section][id]
-            if (index === undefined) return
-            const list = state.resume.sections[section]
-            list[index] = { ...list[index], ...patch }
-          }),
-        ),
-
-      removeItem: (section, id) =>
-        set(
-          produce(state => {
-            const index = state.sectionIndexes[section][id]
-            if (index === undefined) return
-            const arr = state.resume.sections[section]
-            arr.splice(index, 1)
-            delete state.sectionIndexes[section][id]
-            for (let i = index; i < arr.length; i++) {
-              state.sectionIndexes[section][arr[i].id] = i
-            }
-          }),
-        ),
-
-      reorder: (section, fromIndex, toIndex) =>
-        set(
-          produce(state => {
-            const arr = state.resume.sections[section]
-            if (
-              fromIndex < 0 ||
-              fromIndex >= arr.length ||
-              toIndex < 0 ||
-              toIndex >= arr.length
-            )
-              return
-            const [moved] = arr.splice(fromIndex, 1)
-            arr.splice(toIndex, 0, moved)
-            state.sectionIndexes[section] = Object.fromEntries(
-              arr.map((x, i) => [x.id, i]),
-            )
-          }),
-        ),
-
-      setTemplate: template =>
-        set(
-          produce(state => {
-            state.resume.template = template
-          }),
-        ),
-
-      setCustomTemplate: patch =>
-        set(
-          produce(state => {
-            state.resume.customTemplate = {
-              ...state.resume.customTemplate,
-              ...patch,
-            }
-          }),
-        ),
-
-      setSectionLayout: (section, patch) =>
-        set(
-          produce(state => {
-            const layouts = state.resume.customTemplate.sectionLayouts || {}
-            const prev = layouts[section] || {}
-            state.resume.customTemplate.sectionLayouts = {
-              ...layouts,
-              [section]: { ...prev, ...patch },
-            }
-          }),
-        ),
-
-      setUploadedTemplateHtml: html =>
-        set(
-          produce(state => {
-            state.resume.uploadedTemplateHtml = html || ''
-          }),
-        ),
-
-      clearUploadedTemplateHtml: () =>
-        set(
-          produce(state => {
-            state.resume.uploadedTemplateHtml = ''
-            if (state.resume.template === 'uploaded') {
-              state.resume.template = DEFAULT_RESUME.template
-            }
-          }),
-        ),
+      updateProfile: (id, patch) => set(produce(state => {
+        const profile = state.profiles.find(item => item.id === id)
+        if (profile) Object.assign(profile, patch)
+      })),
+      removeProfile: id => set(produce(state => {
+        state.profiles = state.profiles.filter(item => item.id !== id)
+        state.resumes = state.resumes.filter(item => item.profileId !== id)
+        if (state.activeProfileId === id) state.activeProfileId = state.profiles[0]?.id || null
+        if (!state.resumes.some(item => item.id === state.activeResumeId)) state.activeResumeId = state.resumes[0]?.id || null
+      })),
+      addResume: (profileId, values = {}) => {
+        const id = uid()
+        const profile = get().profiles.find(item => item.id === profileId)
+        const profileBasics = profile ? { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website } : {}
+        set(produce(state => {
+          state.resumes.unshift({ id, profileId, name: values.name || 'Untitled resume', targetRole: values.targetRole || '', status: 'Draft', updatedAt: new Date().toISOString(), data: createBlankResumeData(profileBasics), design: { ...DEFAULT_DESIGN, sectionOrder: [...DEFAULT_DESIGN.sectionOrder], sectionSettings: structuredClone(DEFAULT_DESIGN.sectionSettings) } })
+          state.activeResumeId = id
+          state.activeProfileId = profileId
+        }))
+        return id
+      },
+      duplicateResume: id => {
+        const source = get().resumes.find(item => item.id === id)
+        if (!source) return null
+        const newId = uid()
+        set(produce(state => {
+          state.resumes.unshift({ ...structuredClone(source), id: newId, name: `${source.name} — Copy`, status: 'Draft', updatedAt: new Date().toISOString() })
+          state.activeResumeId = newId
+          state.activeProfileId = source.profileId
+        }))
+        return newId
+      },
+      removeResume: id => set(produce(state => {
+        state.resumes = state.resumes.filter(item => item.id !== id)
+        if (state.activeResumeId === id) state.activeResumeId = state.resumes[0]?.id || null
+      })),
+      renameResume: (id, name) => set(produce(state => {
+        const resume = state.resumes.find(item => item.id === id)
+        if (resume) { resume.name = name; touch(resume) }
+      })),
+      updateResumeMeta: (id, patch) => set(produce(state => {
+        const resume = state.resumes.find(item => item.id === id)
+        if (resume) { Object.assign(resume, patch); touch(resume) }
+      })),
+      setBasics: patch => set(produce(state => {
+        const resume = state.resumes.find(item => item.id === state.activeResumeId)
+        if (resume) { Object.assign(resume.data.basics, patch); touch(resume) }
+      })),
+      syncProfileToResume: () => set(produce(state => {
+        const resume = state.resumes.find(item => item.id === state.activeResumeId)
+        const profile = state.profiles.find(item => item.id === resume?.profileId)
+        if (!resume || !profile) return
+        Object.assign(resume.data.basics, { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website })
+        touch(resume)
+      })),
+      addItem: (section, item = {}) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (!resume) return
+        resume.data.sections[section].push({ id: uid(), ...item })
+        touch(resume)
+      })),
+      updateItem: (section, id, patch) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        const item = resume?.data.sections[section]?.find(value => value.id === id)
+        if (item) { Object.assign(item, patch); touch(resume) }
+      })),
+      removeItem: (section, id) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (!resume) return
+        resume.data.sections[section] = resume.data.sections[section].filter(item => item.id !== id)
+        touch(resume)
+      })),
+      moveItem: (section, from, to) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        const list = resume?.data.sections[section]
+        if (!list || to < 0 || to >= list.length) return
+        const [item] = list.splice(from, 1)
+        list.splice(to, 0, item)
+        touch(resume)
+      })),
+      setDesign: patch => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (resume) { Object.assign(resume.design, patch); touch(resume) }
+      })),
+      applyTemplate: (template, designPatch = {}) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (resume) { Object.assign(resume.design, { template, ...designPatch }); touch(resume) }
+      })),
+      setSectionSetting: (section, patch) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (!resume) return
+        resume.design.sectionSettings[section] = { ...resume.design.sectionSettings[section], ...patch }
+        touch(resume)
+      })),
+      moveSection: (from, to) => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        const order = resume?.design.sectionOrder
+        if (!order || to < 0 || to >= order.length) return
+        const [section] = order.splice(from, 1)
+        order.splice(to, 0, section)
+        touch(resume)
+      })),
+      importResume: incoming => set(produce(state => {
+        const resume = state.resumes.find(value => value.id === state.activeResumeId)
+        if (!resume || !incoming) return
+        const candidate = incoming.data || incoming
+        if (candidate.basics) resume.data.basics = { ...resume.data.basics, ...candidate.basics }
+        if (candidate.sections) {
+          for (const key of Object.keys(SECTION_META)) {
+            if (Array.isArray(candidate.sections[key])) resume.data.sections[key] = candidate.sections[key].map(item => ({ ...item, id: item.id || uid() }))
+          }
+        }
+        if (incoming.design) resume.design = { ...resume.design, ...incoming.design }
+        touch(resume)
+      })),
+      replaceWorkspace: workspace => set({ profiles: workspace.profiles || [], resumes: workspace.resumes || [], activeProfileId: workspace.activeProfileId || workspace.profiles?.[0]?.id || null, activeResumeId: workspace.activeResumeId || workspace.resumes?.[0]?.id || null }),
+      setCloudStatus: (cloudStatus, lastCloudSave = get().lastCloudSave) => set({ cloudStatus, lastCloudSave }),
+      resetWorkspace: () => set(seedWorkspace()),
     }),
     {
-      name: 'resume-builder',
-      storage: createJSONStorage(() => sessionStorage),
+      name: 'resume-studio-workspace',
+      version: 2,
+      storage: createJSONStorage(() => localStorage),
+      partialize: state => ({ profiles: state.profiles, resumes: state.resumes, activeProfileId: state.activeProfileId, activeResumeId: state.activeResumeId }),
     },
   ),
 )
 
+export const selectActiveResume = state => state.resumes.find(item => item.id === state.activeResumeId) || null
+export const selectActiveProfile = state => state.profiles.find(item => item.id === state.activeProfileId) || null

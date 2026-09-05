@@ -25,6 +25,9 @@
     "api/health.js": {
       "maxDuration": 10
     },
+    "api/ai.js": {
+      "maxDuration": 60
+    },
     "api/export/test.js": {
       "maxDuration": 10
     },

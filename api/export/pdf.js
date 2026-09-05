@@ -1,5 +1,4 @@
 const sanitizeHtml = require('sanitize-html');
-const { JSDOM } = require('jsdom');
 
 let puppeteer;
 let chromium;
@@ -23,10 +22,16 @@ async function getBrowser() {
 
 function sanitizeHtmlStrict(html) {
   return sanitizeHtml(html, {
-    allowedTags: false,
-    allowedAttributes: false,
-    allowedSchemesByTag: {},
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['html', 'head', 'body', 'style', 'section', 'article', 'header', 'main', 'aside', 'img']),
+    allowedAttributes: {
+      '*': ['class', 'style'],
+      img: ['src', 'alt'],
+      meta: ['charset', 'name', 'content'],
+      html: ['lang'],
+    },
+    allowedSchemes: ['http', 'https', 'data', 'mailto'],
     allowProtocolRelative: false,
+    allowVulnerableTags: true,
   });
 }
 
@@ -74,8 +79,6 @@ module.exports = async (req, res) => {
     }
 
     const safeHtml = wrapHtmlDocument(sanitizeHtmlStrict(html));
-    new JSDOM(safeHtml);
-
     const { puppeteer: pptr, chromium: chrom } = await getBrowser();
 
     let executablePath;
