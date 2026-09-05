@@ -139,7 +139,7 @@ export const useResumeStore = create(
       addProfile: values => {
         const id = uid()
         set(produce(state => {
-          state.profiles.push({ id, name: values.name || 'Untitled person', headline: values.headline || '', email: values.email || '', phone: values.phone || '', location: values.location || '', website: values.website || '', createdAt: new Date().toISOString() })
+          state.profiles.push({ id, name: values.name || 'Untitled person', headline: values.headline || '', email: values.email || '', phone: values.phone || '', location: values.location || '', website: values.website || '', linkedin: values.linkedin || '', createdAt: new Date().toISOString() })
           state.activeProfileId = id
         }))
         return id
@@ -157,7 +157,7 @@ export const useResumeStore = create(
       addResume: (profileId, values = {}) => {
         const id = uid()
         const profile = get().profiles.find(item => item.id === profileId)
-        const profileBasics = profile ? { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website } : {}
+        const profileBasics = profile ? { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin } : {}
         set(produce(state => {
           state.resumes.unshift({ id, profileId, name: values.name || 'Untitled resume', targetRole: values.targetRole || '', status: 'Draft', updatedAt: new Date().toISOString(), data: createBlankResumeData(profileBasics), design: { ...DEFAULT_DESIGN, sectionOrder: [...DEFAULT_DESIGN.sectionOrder], sectionSettings: structuredClone(DEFAULT_DESIGN.sectionSettings) } })
           state.activeResumeId = id
@@ -196,7 +196,7 @@ export const useResumeStore = create(
         const resume = state.resumes.find(item => item.id === state.activeResumeId)
         const profile = state.profiles.find(item => item.id === resume?.profileId)
         if (!resume || !profile) return
-        Object.assign(resume.data.basics, { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website })
+        Object.assign(resume.data.basics, { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin })
         touch(resume)
       })),
       addItem: (section, item = {}) => set(produce(state => {

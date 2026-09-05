@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Copy, FilePlus2, FileText, MoreHorizontal, Plus, Search, Sparkles, Trash2, UserPlus, Users, X } from 'lucide-react'
+import { Copy, FilePlus2, FileText, ImportIcon, MoreHorizontal, Plus, Search, Sparkles, Trash2, UserPlus, Users, X } from 'lucide-react'
 import { useResumeStore } from '../store'
+import { analyzeResume } from '../lib/ats'
+import { ConfirmModal } from './AppModal'
+import { LinkedInImport } from './LinkedInImport'
 
 const initials = name => name?.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'NP'
 const relativeDate = value => {
@@ -21,6 +24,8 @@ export const Dashboard = () => {
   const resumes = useResumeStore(s => s.resumes)
   const addProfile = useResumeStore(s => s.addProfile)
   const addResume = useResumeStore(s => s.addResume)
+  const importResume = useResumeStore(s => s.importResume)
+  const updateProfile = useResumeStore(s => s.updateProfile)
   const duplicateResume = useResumeStore(s => s.duplicateResume)
   const removeResume = useResumeStore(s => s.removeResume)
   const setActiveResume = useResumeStore(s => s.setActiveResume)
@@ -30,6 +35,7 @@ export const Dashboard = () => {
   const [profileForm, setProfileForm] = useState({ name: '', headline: '', email: '' })
   const [resumeForm, setResumeForm] = useState({ profileId: profiles[0]?.id || '', name: '', targetRole: '' })
   const [menu, setMenu] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const filtered = useMemo(() => resumes.filter(resume => {
     const profile = profiles.find(item => item.id === resume.profileId)
@@ -51,11 +57,20 @@ export const Dashboard = () => {
     setModal(null)
     openResume(id)
   }
+  const applyLinkedIn = (data, target) => {
+    let profileId = target
+    if (target === 'new') profileId = addProfile({ name: data.basics.fullName, headline: data.basics.title, email: data.basics.email, phone: data.basics.phone, location: data.basics.location, linkedin: data.basics.linkedin })
+    else updateProfile(profileId, { name: data.basics.fullName, headline: data.basics.title, email: data.basics.email, phone: data.basics.phone, location: data.basics.location, linkedin: data.basics.linkedin })
+    const id = addResume(profileId, { name: `${data.basics.title || 'Professional'} resume`, targetRole: data.basics.title })
+    importResume(data)
+    setModal(null)
+    openResume(id)
+  }
 
   return <div className="dashboard-page">
     <section className="dashboard-hero">
       <div><span className="eyebrow">Your career workspace</span><h1>Good morning, <em>{profiles[0]?.name?.split(' ')[0] || 'there'}.</em></h1><p>Manage every person and every tailored resume from one calm, professional workspace.</p></div>
-      <div className="hero-actions"><button className="button secondary" onClick={() => setModal('profile')}><UserPlus size={17} /> Add person</button><button className="button primary" onClick={() => setModal('resume')} disabled={!profiles.length}><FilePlus2 size={17} /> New resume</button></div>
+      <div className="hero-actions"><button className="button linkedin-button" onClick={() => setModal('linkedin')}><ImportIcon size={17} /> Import LinkedIn</button><button className="button secondary" onClick={() => setModal('profile')}><UserPlus size={17} /> Add person</button><button className="button primary" onClick={() => setModal('resume')} disabled={!profiles.length}><FilePlus2 size={17} /> New resume</button></div>
     </section>
 
     <section className="metric-strip">
@@ -77,14 +92,17 @@ export const Dashboard = () => {
       <div className="library-head"><div><h2>Resume library</h2><p>{filtered.length} {filtered.length === 1 ? 'document' : 'documents'} in this view</p></div><div className="library-tools"><label className="search-field"><Search size={16} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search resumes" /></label><button className="button primary compact" onClick={() => setModal('resume')} disabled={!profiles.length}><Plus size={16} /> New</button></div></div>
       {filtered.length ? <div className="resume-grid">{filtered.map((resume, index) => {
         const profile = profiles.find(item => item.id === resume.profileId)
+        const atsScore = analyzeResume(resume).overall
         return <article className="resume-card" key={resume.id} onClick={() => openResume(resume.id)}>
-          <div className={`resume-cover cover-${index % 4}`}><div className="paper-mini"><div className="paper-name">{profile?.name}</div><div className="paper-role">{resume.data.basics.title || resume.name}</div><i /><i /><i className="short" /><b>{initials(profile?.name)}</b></div><span className="status-badge">{resume.status}</span></div>
-          <div className="resume-card-body"><div className="card-title-line"><div><h3>{resume.name}</h3><p>{profile?.name} · {resume.targetRole || 'General resume'}</p></div><button className="icon-button" onClick={event => { event.stopPropagation(); setMenu(menu === resume.id ? null : resume.id) }}><MoreHorizontal size={18} /></button>{menu === resume.id && <div className="card-menu"><button onClick={event => { event.stopPropagation(); const id = duplicateResume(resume.id); setMenu(null); openResume(id) }}><Copy size={15} /> Duplicate</button><button className="danger" onClick={event => { event.stopPropagation(); if (confirm('Delete this resume?')) removeResume(resume.id); setMenu(null) }}><Trash2 size={15} /> Delete</button></div>}</div><div className="card-meta"><span>{relativeDate(resume.updatedAt)}</span><span>{resume.design.template}</span></div></div>
+          <div className={`resume-cover cover-${index % 4}`}><div className="paper-mini"><div className="paper-name">{profile?.name}</div><div className="paper-role">{resume.data.basics.title || resume.name}</div><i /><i /><i className="short" /><b>{initials(profile?.name)}</b></div><span className="status-badge">{resume.status}</span><span className={`card-ats-score ats-${atsScore >= 80 ? 'high' : atsScore >= 60 ? 'mid' : 'low'}`}>ATS {atsScore}</span></div>
+          <div className="resume-card-body"><div className="card-title-line"><div><h3>{resume.name}</h3><p>{profile?.name} · {resume.targetRole || 'General resume'}</p></div><button className="icon-button" onClick={event => { event.stopPropagation(); setMenu(menu === resume.id ? null : resume.id) }}><MoreHorizontal size={18} /></button>{menu === resume.id && <div className="card-menu"><button onClick={event => { event.stopPropagation(); const id = duplicateResume(resume.id); setMenu(null); openResume(id) }}><Copy size={15} /> Duplicate</button><button className="danger" onClick={event => { event.stopPropagation(); setDeleteTarget(resume); setMenu(null) }}><Trash2 size={15} /> Delete</button></div>}</div><div className="card-meta"><span>{relativeDate(resume.updatedAt)}</span><span>{resume.design.template}</span></div></div>
         </article>
       })}<button className="new-resume-card" onClick={() => setModal('resume')}><span><Plus size={22} /></span><strong>Create another resume</strong><small>Start from a person’s master details</small></button></div> : <div className="empty-state"><span><Search size={24} /></span><h3>No resumes found</h3><p>Try another search or create a new tailored resume.</p></div>}
     </section>
 
     {modal === 'profile' && <Modal title="Add a person" description="Create a reusable identity for this workspace." onClose={() => setModal(null)}><form onSubmit={createProfile} className="modal-form"><label>Full name<input autoFocus required value={profileForm.name} onChange={e => setProfileForm({ ...profileForm, name: e.target.value })} placeholder="e.g. Priya Sharma" /></label><label>Professional headline<input value={profileForm.headline} onChange={e => setProfileForm({ ...profileForm, headline: e.target.value })} placeholder="e.g. Product Designer" /></label><label>Email address<input type="email" value={profileForm.email} onChange={e => setProfileForm({ ...profileForm, email: e.target.value })} placeholder="priya@example.com" /></label><div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary">Continue to resume</button></div></form></Modal>}
     {modal === 'resume' && <Modal title="Create a new resume" description="Choose whose details to use, then tailor it for an opportunity." onClose={() => setModal(null)}><form onSubmit={createResume} className="modal-form"><label>Person<select required value={resumeForm.profileId} onChange={e => setResumeForm({ ...resumeForm, profileId: e.target.value })}>{profiles.map(profile => <option value={profile.id} key={profile.id}>{profile.name}</option>)}</select></label><label>Resume name<input autoFocus required value={resumeForm.name} onChange={e => setResumeForm({ ...resumeForm, name: e.target.value })} placeholder="e.g. Senior Frontend — Acme" /></label><label>Target role or company<input value={resumeForm.targetRole} onChange={e => setResumeForm({ ...resumeForm, targetRole: e.target.value })} placeholder="e.g. Senior Frontend Engineer" /></label><div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary">Create resume</button></div></form></Modal>}
+    {modal === 'linkedin' && <LinkedInImport profiles={profiles} onClose={() => setModal(null)} onApply={applyLinkedIn} />}
+    {deleteTarget && <ConfirmModal title="Delete this resume?" description={`“${deleteTarget.name}” will be removed from this workspace. This cannot be undone.`} confirmLabel="Delete resume" onClose={() => setDeleteTarget(null)} onConfirm={() => { removeResume(deleteTarget.id); setDeleteTarget(null) }} />}
   </div>
 }

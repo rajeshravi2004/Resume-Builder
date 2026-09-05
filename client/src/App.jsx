@@ -1,6 +1,6 @@
 import { createElement, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { FileText, LayoutDashboard, Palette, Download, Settings, ChevronDown, Cloud, CloudOff, Menu, X, Sparkles } from 'lucide-react'
+import { FileSearch, FileText, LayoutDashboard, Palette, Download, Settings, ChevronDown, Cloud, CloudOff, Menu, X, Sparkles } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 import { getAdminStatus, isSupabaseConfigured, loadCloudWorkspace, saveCloudWorkspace, supabase } from './lib/supabase'
 import { selectActiveProfile, selectActiveResume, useResumeStore } from './store'
@@ -8,12 +8,14 @@ import { selectActiveProfile, selectActiveResume, useResumeStore } from './store
 const Builder = lazy(() => import('./components/Builder').then(module => ({ default: module.Builder })))
 const Templates = lazy(() => import('./components/Templates').then(module => ({ default: module.Templates })))
 const Preview = lazy(() => import('./components/Preview').then(module => ({ default: module.Preview })))
+const AtsChecker = lazy(() => import('./components/AtsChecker').then(module => ({ default: module.AtsChecker })))
 const SettingsPage = lazy(() => import('./components/SettingsPage').then(module => ({ default: module.SettingsPage })))
 
 const navItems = [
   { to: '/', label: 'Workspace', icon: LayoutDashboard, end: true },
   { to: '/editor', label: 'Content', icon: FileText },
   { to: '/design', label: 'Design studio', icon: Palette },
+  { to: '/ats', label: 'ATS checker', icon: FileSearch },
   { to: '/export', label: 'Preview & export', icon: Download },
 ]
 
@@ -126,7 +128,7 @@ function WorkspaceShell() {
   const resumes = useResumeStore(s => s.resumes)
   const setActiveResume = useResumeStore(s => s.setActiveResume)
   const cloudStatus = useResumeStore(s => s.cloudStatus)
-  const isEditor = ['/editor', '/design', '/export'].includes(location.pathname)
+  const isEditor = ['/editor', '/design', '/ats', '/export'].includes(location.pathname)
 
   useEffect(() => {
     if (isSupabaseConfigured) getAdminStatus().then(setIsAdmin)
@@ -156,6 +158,7 @@ function WorkspaceShell() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/editor" element={resume ? <Builder /> : <Navigate to="/" />} />
         <Route path="/design" element={resume ? <Templates /> : <Navigate to="/" />} />
+        <Route path="/ats" element={resume ? <AtsChecker /> : <Navigate to="/" />} />
         <Route path="/export" element={resume ? <Preview /> : <Navigate to="/" />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" />} />
