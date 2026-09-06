@@ -6,8 +6,12 @@ let chromium;
 async function getBrowser() {
   try {
     if (!puppeteer) {
-      puppeteer = require('puppeteer-core');
-      chromium = require('@sparticuz/chromium');
+      const [puppeteerModule, chromiumModule] = await Promise.all([
+        import('puppeteer-core'),
+        import('@sparticuz/chromium'),
+      ]);
+      puppeteer = puppeteerModule.default || puppeteerModule;
+      chromium = chromiumModule.default || chromiumModule;
       
       if (chromium.setGraphicsMode) {
         chromium.setGraphicsMode(false);
