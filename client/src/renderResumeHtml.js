@@ -128,6 +128,14 @@ export const renderFullResumeHtml = resume => {
 
 export const renderThumbnailResumeHtml = resume => renderFullResumeHtml(resume).replace('</style>', '.resume-page{transform-origin:top left}</style>')
 
+export const getResumeStyles = (resume, { includeCustom = true } = {}) => {
+  if (!resume) return ''
+  const source = includeCustom
+    ? resume
+    : { ...resume, design: { ...(resume.design || {}), customCSS: '' } }
+  return renderFullResumeHtml(source).match(/<style>([\s\S]*?)<\/style>/)?.[1]?.trim() || ''
+}
+
 export const renderTemplateSkeletonHtml = templateId => {
   const preset = TEMPLATE_PRESETS.find(item => item.id === templateId) || TEMPLATE_PRESETS[0]
   const sample = { data: { basics: { fullName: '{{fullName}}', title: '{{title}}', email: '{{email}}', phone: '{{phone}}', location: '{{location}}', website: '{{website}}', linkedin: '{{linkedin}}', summary: '{{summary}}' }, sections: Object.fromEntries(Object.keys(SECTION_META).map(key => [key, []])) }, design: { ...DEFAULT_DESIGN, ...preset.patch, template: templateId } }
