@@ -74,6 +74,8 @@ export const DEFAULT_DESIGN = {
       variant: key === 'skills' || key === 'interests' ? 'compact' : 'standard',
     }]),
   ),
+  contactIcons: false,
+  sectionIcons: false,
   customCSS: '',
   generatedLabel: '',
 }
@@ -86,6 +88,7 @@ const sampleBasics = {
   location: 'Chennai, India',
   website: 'rajeshravi.dev',
   linkedin: 'linkedin.com/in/rajeshravi',
+  github: 'github.com/rajeshravi2004',
   summary: 'Full stack developer building reliable, human-centred web products across healthcare and applied AI. Experienced in taking ideas from API design through polished React interfaces and production deployment.',
 }
 
@@ -109,7 +112,7 @@ const sampleSections = {
 }
 
 export const createBlankResumeData = (basics = {}) => ({
-  basics: { fullName: '', title: '', email: '', phone: '', location: '', website: '', linkedin: '', summary: '', ...basics },
+  basics: { fullName: '', title: '', email: '', phone: '', location: '', website: '', linkedin: '', github: '', summary: '', ...basics },
   sections: Object.fromEntries(Object.keys(SECTION_META).map(key => [key, []])),
 })
 
@@ -117,7 +120,7 @@ const seedWorkspace = () => {
   const profileId = 'profile-rajesh'
   const resumeId = 'resume-product'
   return {
-    profiles: [{ id: profileId, name: 'Rajesh Ravi', headline: 'Full Stack Developer', email: sampleBasics.email, phone: sampleBasics.phone, location: sampleBasics.location, website: sampleBasics.website, createdAt: new Date().toISOString() }],
+    profiles: [{ id: profileId, name: 'Rajesh Ravi', headline: 'Full Stack Developer', email: sampleBasics.email, phone: sampleBasics.phone, location: sampleBasics.location, website: sampleBasics.website, linkedin: sampleBasics.linkedin, github: sampleBasics.github, createdAt: new Date().toISOString() }],
     resumes: [{ id: resumeId, profileId, name: 'Full Stack Developer', targetRole: 'Product engineering roles', status: 'Draft', updatedAt: new Date().toISOString(), data: { basics: sampleBasics, sections: sampleSections }, design: DEFAULT_DESIGN }],
     activeProfileId: profileId,
     activeResumeId: resumeId,
@@ -139,7 +142,7 @@ export const useResumeStore = create(
       addProfile: values => {
         const id = uid()
         set(produce(state => {
-          state.profiles.push({ id, name: values.name || 'Untitled person', headline: values.headline || '', email: values.email || '', phone: values.phone || '', location: values.location || '', website: values.website || '', linkedin: values.linkedin || '', createdAt: new Date().toISOString() })
+          state.profiles.push({ id, name: values.name || 'Untitled person', headline: values.headline || '', email: values.email || '', phone: values.phone || '', location: values.location || '', website: values.website || '', linkedin: values.linkedin || '', github: values.github || '', createdAt: new Date().toISOString() })
           state.activeProfileId = id
         }))
         return id
@@ -157,7 +160,7 @@ export const useResumeStore = create(
       addResume: (profileId, values = {}) => {
         const id = uid()
         const profile = get().profiles.find(item => item.id === profileId)
-        const profileBasics = profile ? { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin } : {}
+        const profileBasics = profile ? { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin, github: profile.github } : {}
         set(produce(state => {
           state.resumes.unshift({ id, profileId, name: values.name || 'Untitled resume', targetRole: values.targetRole || '', status: 'Draft', updatedAt: new Date().toISOString(), data: createBlankResumeData(profileBasics), design: { ...DEFAULT_DESIGN, sectionOrder: [...DEFAULT_DESIGN.sectionOrder], sectionSettings: structuredClone(DEFAULT_DESIGN.sectionSettings) } })
           state.activeResumeId = id
@@ -196,7 +199,7 @@ export const useResumeStore = create(
         const resume = state.resumes.find(item => item.id === state.activeResumeId)
         const profile = state.profiles.find(item => item.id === resume?.profileId)
         if (!resume || !profile) return
-        Object.assign(resume.data.basics, { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin })
+        Object.assign(resume.data.basics, { fullName: profile.name, title: profile.headline, email: profile.email, phone: profile.phone, location: profile.location, website: profile.website, linkedin: profile.linkedin, github: profile.github })
         touch(resume)
       })),
       addItem: (section, item = {}) => set(produce(state => {

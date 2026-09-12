@@ -22,11 +22,11 @@ const RESUME_CLASS_GROUPS = [
   },
   {
     label: 'Header & identity',
-    selectors: ['.resume-header', '.profile-photo', '.identity', '.headline', '.contact', '.contact span', '.contact span + span::before', '.summary'],
+    selectors: ['.resume-header', '.profile-photo', '.identity', '.headline', '.contact', '.contact-item', '.contact-icon', '.contact span', '.contact span + span::before', '.summary'],
   },
   {
     label: 'Sections',
-    selectors: ['.resume-section', '.section-experience', '.section-projects', '.section-education', '.section-skills', '.section-certifications', '.section-languages', '.section-interests', '.section-title', '.section-title::after', '.section-content', '.section-content.standard', '.section-content.timeline', '.section-content.compact'],
+    selectors: ['.resume-section', '.section-experience', '.section-projects', '.section-education', '.section-skills', '.section-certifications', '.section-languages', '.section-interests', '.section-title', '.section-icon-mark', '.section-title::after', '.section-content', '.section-content.standard', '.section-content.timeline', '.section-content.compact'],
   },
   {
     label: 'Entries & details',

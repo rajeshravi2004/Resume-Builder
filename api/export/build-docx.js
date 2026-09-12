@@ -45,7 +45,7 @@ const buildResumeDocx = async resume => {
   const children = [
     new Paragraph({ alignment, spacing: { after: 40 }, children: [new TextRun({ text: clean(basics.fullName || 'Your name'), bold: true, color: primary, font: headingFont, size: Math.round(Number(design.nameSize || 32) * 2) })] }),
     new Paragraph({ alignment, spacing: { after: 70 }, children: [new TextRun({ text: clean(basics.title), bold: true, color: accent, size: bodySize + 2 })] }),
-    new Paragraph({ alignment, border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: accent } }, spacing: { after: 160 }, children: [new TextRun({ text: [basics.email, basics.phone, basics.location, basics.website, basics.linkedin].filter(Boolean).map(clean).join('  •  '), color: '4B5563', size: Math.max(16, bodySize - 2) })] }),
+    new Paragraph({ alignment, border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: accent } }, spacing: { after: 160 }, children: [new TextRun({ text: [basics.email, basics.phone, basics.location, basics.linkedin, basics.github, basics.website].filter(Boolean).map(clean).join('  |  '), color: '4B5563', size: Math.max(16, bodySize - 2) })] }),
   ];
 
   if (basics.summary) children.push(new Paragraph({ spacing: { after: 170 }, children: [new TextRun(clean(basics.summary))] }));

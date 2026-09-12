@@ -57,7 +57,8 @@ export const Builder = () => {
           <label className="field icon-field"><span>Phone</span><div><Phone size={15} /><input value={basics.phone} onChange={e => setBasics({ phone: e.target.value })} placeholder="+91 98765 43210" /></div></label>
           <label className="field icon-field"><span>Location</span><div><MapPin size={15} /><input value={basics.location} onChange={e => setBasics({ location: e.target.value })} placeholder="City, Country" /></div></label>
           <label className="field icon-field"><span>Portfolio</span><div><Link2 size={15} /><input value={basics.website} onChange={e => setBasics({ website: e.target.value })} placeholder="portfolio.com" /></div></label>
-          <label className="field full"><span>LinkedIn</span><input value={basics.linkedin || ''} onChange={e => setBasics({ linkedin: e.target.value })} placeholder="linkedin.com/in/yourname" /></label>
+          <label className="field icon-field"><span>LinkedIn</span><div><Link2 size={15} /><input value={basics.linkedin || ''} onChange={e => setBasics({ linkedin: e.target.value })} placeholder="linkedin.com/in/yourname" /></div></label>
+          <label className="field icon-field"><span>GitHub</span><div><Link2 size={15} /><input value={basics.github || ''} onChange={e => setBasics({ github: e.target.value })} placeholder="github.com/yourname" /></div></label>
           <label className="field full"><span>Professional summary</span><div className="textarea-wrap"><textarea ref={summaryRef} rows={5} value={basics.summary} onChange={e => setBasics({ summary: e.target.value })} placeholder="Write a focused summary of your experience and value…" /><div className="field-hint"><span>{basics.summary.length} characters</span><AiTextButton value={basics.summary} onApply={value => setBasics({ summary: value })} textareaRef={summaryRef} context={`${basics.title} professional summary`} /></div></div></label>
         </div></div>}
       </section>

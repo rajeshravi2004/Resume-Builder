@@ -67,8 +67,8 @@ export function analyzeResume(resume, jobDescription = '', designOverride) {
   add('supporting', 'Projects or certifications', 7, (sections.projects || []).length > 0 || (sections.certifications || []).length > 0, 'Add proof through projects or certifications.', 'projects')
   const contentWordCount = words(textOf(visibleResume)).length
   add('length', 'Useful content depth', 10, contentWordCount >= 250 && contentWordCount <= 900, contentWordCount < 250 ? 'Add specific evidence; the resume is currently too light.' : 'Keep the resume concise and remove repetition.')
-  const linkedinOrWebsite = Boolean(basics.linkedin || basics.website)
-  add('links', 'Professional links', 5, linkedinOrWebsite, 'Add LinkedIn or a portfolio URL.')
+  const professionalLink = Boolean(basics.linkedin || basics.github || basics.website)
+  add('links', 'Professional links', 5, professionalLink, 'Add LinkedIn, GitHub or a portfolio URL.')
   add('dates', 'Consistent dates', 5, experiences.length > 0 && experiences.every(item => /\d{4}|present|current/i.test(item.period || '')), 'Use clear years for every role.', 'experience')
 
   const contentScore = clamp((earned / possible) * 100)
