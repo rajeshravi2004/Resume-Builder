@@ -27,7 +27,7 @@ export const exportResume = async (type, html, filename = 'resume', resume) => {
   const response = await fetch(`${apiBase}/export/${type}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ html, resume }),
+    body: JSON.stringify({ html, resume, ...(resume?.documentType === 'cover-letter' ? { pdfOptions: { preferCSSPageSize: true, margin: { top: '18mm', right: '18mm', bottom: '18mm', left: '18mm' } } } : {}) }),
   })
   if (!response.ok) return parseError(response)
   const blob = await response.blob()

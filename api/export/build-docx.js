@@ -33,6 +33,7 @@ const itemParagraphs = (key, item, design) => {
 };
 
 const buildResumeDocx = async resume => {
+  if (resume?.documentType === 'cover-letter') return require('./build-cover-letter-docx').buildCoverLetterDocx(resume);
   if (!resume?.data?.basics || !resume?.data?.sections) throw new Error('A valid resume document is required.');
   const design = resume.design || {};
   const basics = resume.data.basics;

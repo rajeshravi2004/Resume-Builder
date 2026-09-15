@@ -8,6 +8,7 @@ Resume Studio is a production-oriented resume workspace for individuals, familie
 - Reusable master profiles and one-click identity sync into tailored resumes
 - Resume duplication for fast job-specific variants
 - Live A4 preview with multi-page detection
+- Cover-letter editor for each resume, with a factual starter draft, automatic saving, live A4 preview, and PDF/Word/print export
 - Twelve professional, ATS-conscious starting templates
 - Live ATS analysis with content, parser-safety, keyword-match, and per-template projected scores
 - Job-description comparison with matched and missing keyword guidance

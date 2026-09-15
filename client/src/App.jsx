@@ -1,6 +1,6 @@
 import { createElement, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { FileSearch, FileText, LayoutDashboard, Palette, Download, Settings, ChevronDown, Cloud, CloudOff, Menu, X, Sparkles } from 'lucide-react'
+import { FileSearch, FileText, Mail, LayoutDashboard, Palette, Download, Settings, ChevronDown, Cloud, CloudOff, Menu, X, Sparkles } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 import { getAdminStatus, isSupabaseConfigured, loadCloudWorkspace, saveCloudWorkspace, supabase } from './lib/supabase'
 import { selectActiveProfile, selectActiveResume, useResumeStore } from './store'
@@ -10,12 +10,16 @@ const Templates = lazy(() => import('./components/Templates').then(module => ({ 
 const Preview = lazy(() => import('./components/Preview').then(module => ({ default: module.Preview })))
 const AtsChecker = lazy(() => import('./components/AtsChecker').then(module => ({ default: module.AtsChecker })))
 const SettingsPage = lazy(() => import('./components/SettingsPage').then(module => ({ default: module.SettingsPage })))
+const CoverLetter = lazy(() => import('./components/CoverLetter').then(module => ({ default: module.CoverLetter })))
+
+const BrandMark = () => <img className="brand-mark" src="/resume-studio-logo.png" alt="Resume Studio logo" width="36" height="36" />
 
 const navItems = [
   { to: '/', label: 'Workspace', icon: LayoutDashboard, end: true },
   { to: '/editor', label: 'Content', icon: FileText },
   { to: '/design', label: 'Design studio', icon: Palette },
   { to: '/ats', label: 'ATS checker', icon: FileSearch },
+  { to: '/cover-letter', label: 'Cover letter', icon: Mail },
   { to: '/export', label: 'Preview & export', icon: Download },
 ]
 
@@ -33,7 +37,7 @@ function AuthGate({ children }) {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return <div className="app-loader"><div className="brand-mark">R</div><p>Opening your workspace…</p></div>
+  if (session === undefined) return <div className="app-loader"><BrandMark /><p>Opening your workspace…</p></div>
   if (!isSupabaseConfigured || session) return children
 
   const submit = async event => {
@@ -58,7 +62,7 @@ function AuthGate({ children }) {
 
   return <div className="auth-screen">
     <div className="auth-story">
-      <div className="brand-lockup"><span className="brand-mark">R</span><span>Resume Studio</span></div>
+      <div className="brand-lockup"><BrandMark /><span>Resume Studio</span></div>
       <div className="auth-copy"><span className="eyebrow light">Professional career workspace</span><h1>Every person.<br />Every opportunity.<br /><em>One workspace.</em></h1><p>Build tailored, beautifully typeset resumes without losing the master profile behind them.</p></div>
       <div className="auth-proof"><Sparkles size={18} /><span>AI writing partner · Custom design system · PDF & DOCX</span></div>
     </div>
@@ -128,7 +132,7 @@ function WorkspaceShell() {
   const resumes = useResumeStore(s => s.resumes)
   const setActiveResume = useResumeStore(s => s.setActiveResume)
   const cloudStatus = useResumeStore(s => s.cloudStatus)
-  const isEditor = ['/editor', '/design', '/ats', '/export'].includes(location.pathname)
+  const isEditor = ['/editor', '/design', '/ats', '/export', '/cover-letter'].includes(location.pathname)
 
   useEffect(() => {
     if (isSupabaseConfigured) getAdminStatus().then(setIsAdmin)
@@ -139,7 +143,7 @@ function WorkspaceShell() {
   return <div className="workspace-shell">
     <CloudSync />
     <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
-      <div className="sidebar-brand"><span className="brand-mark">R</span><div><strong>Resume Studio</strong><small>Career workspace</small></div><button className="icon-button mobile-close" onClick={() => setMobileOpen(false)}><X size={19} /></button></div>
+      <div className="sidebar-brand"><BrandMark /><div><strong>Resume Studio</strong><small>Career workspace</small></div><button className="icon-button mobile-close" onClick={() => setMobileOpen(false)}><X size={19} /></button></div>
       <nav className="main-nav">
         <span className="nav-label">Workspace</span>
         {navItems.map(({ to, label, icon, end }) => <NavLink key={to} to={to} end={end} onClick={() => setMobileOpen(false)} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>{createElement(icon, { size: 18 })}<span>{label}</span></NavLink>)}
@@ -152,14 +156,15 @@ function WorkspaceShell() {
     <div className="workspace-main">
       <header className="topbar">
         <div className="topbar-left"><button className="icon-button mobile-menu" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>{isEditor && resume ? <div className="resume-switcher"><div className="mini-avatar">{profile?.name?.slice(0, 2).toUpperCase() || 'RS'}</div><div><small>{profile?.name}</small><select value={resume.id} onChange={e => chooseResume(e.target.value)}>{resumes.map(item => <option key={item.id} value={item.id}>{profiles.find(p => p.id === item.profileId)?.name} · {item.name}</option>)}</select></div><ChevronDown size={14} /></div> : <div><strong>Resume Studio</strong><small className="topbar-subtitle">Build work worth reading</small></div>}</div>
-        <div className="topbar-actions">{isAdmin && <span className="admin-badge">Admin</span>}{isEditor && <><span className="autosave-dot"><i /> Autosaved</span><button className="button primary compact" onClick={() => navigate('/export')}><Download size={15} /> Export</button></>}</div>
+        <div className="topbar-actions">{isAdmin && <span className="admin-badge">Admin</span>}{isEditor && location.pathname !== '/cover-letter' && <><span className="autosave-dot"><i /> Autosaved</span><button className="button primary compact" onClick={() => navigate('/export')}><Download size={15} /> Export</button></>}</div>
       </header>
-      <main className={isEditor ? 'page-content editor-page' : 'page-content'}><Suspense fallback={<div className="route-loader"><span className="brand-mark">R</span><p>Preparing your workspace…</p></div>}><Routes>
+      <main className={isEditor ? 'page-content editor-page' : 'page-content'}><Suspense fallback={<div className="route-loader"><BrandMark /><p>Preparing your workspace…</p></div>}><Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/editor" element={resume ? <Builder /> : <Navigate to="/" />} />
         <Route path="/design" element={resume ? <Templates /> : <Navigate to="/" />} />
         <Route path="/ats" element={resume ? <AtsChecker /> : <Navigate to="/" />} />
         <Route path="/export" element={resume ? <Preview /> : <Navigate to="/" />} />
+        <Route path="/cover-letter" element={<CoverLetter key={resume?.id || 'empty'} />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes></Suspense></main>

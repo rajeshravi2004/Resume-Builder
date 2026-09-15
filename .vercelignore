@@ -14,4 +14,7 @@ requirements.txt
 .python-version
 venv/
 env/
+workspace-import/
+.tmp-ui-check/
+scripts/
 

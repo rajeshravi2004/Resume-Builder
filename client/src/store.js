@@ -191,6 +191,10 @@ export const useResumeStore = create(
         const resume = state.resumes.find(item => item.id === id)
         if (resume) { Object.assign(resume, patch); touch(resume) }
       })),
+      setCoverLetter: (id, patch) => set(produce(state => {
+        const resume = state.resumes.find(item => item.id === id)
+        if (resume) { resume.coverLetter = { ...resume.coverLetter, ...patch }; touch(resume) }
+      })),
       setBasics: patch => set(produce(state => {
         const resume = state.resumes.find(item => item.id === state.activeResumeId)
         if (resume) { Object.assign(resume.data.basics, patch); touch(resume) }
@@ -260,6 +264,7 @@ export const useResumeStore = create(
           }
         }
         if (incoming.design) resume.design = { ...resume.design, ...incoming.design }
+        if (incoming.coverLetter && typeof incoming.coverLetter === 'object') resume.coverLetter = { ...incoming.coverLetter }
         touch(resume)
       })),
       replaceWorkspace: workspace => set({ profiles: workspace.profiles || [], resumes: workspace.resumes || [], activeProfileId: workspace.activeProfileId || workspace.profiles?.[0]?.id || null, activeResumeId: workspace.activeResumeId || workspace.resumes?.[0]?.id || null }),
