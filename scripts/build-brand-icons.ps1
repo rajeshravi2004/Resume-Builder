@@ -9,7 +9,8 @@ foreach ($asset in $assets.GetEnumerator()) {
   $graphics = [Drawing.Graphics]::FromImage($bitmap)
   $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $graphics.DrawImage($sourceImage, 0, 0, $asset.Value, $asset.Value)
-  $bitmap.Save((Join-Path $assetRoot $asset.Key), [Drawing.Imaging.ImageFormat]::Png)
+  $outputPath = if ($asset.Key -eq 'resume-studio-logo.png') { Join-Path $PSScriptRoot '../client/src/assets/resume-studio-logo.png' } else { Join-Path $assetRoot $asset.Key }
+  $bitmap.Save($outputPath, [Drawing.Imaging.ImageFormat]::Png)
   $graphics.Dispose()
   $bitmap.Dispose()
 }

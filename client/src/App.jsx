@@ -4,6 +4,7 @@ import { FileSearch, FileText, Mail, LayoutDashboard, Palette, Download, Setting
 import { Dashboard } from './components/Dashboard'
 import { getAdminStatus, isSupabaseConfigured, loadCloudWorkspace, saveCloudWorkspace, supabase } from './lib/supabase'
 import { selectActiveProfile, selectActiveResume, useResumeStore } from './store'
+import studioLogo from './assets/resume-studio-logo.png'
 
 const Builder = lazy(() => import('./components/Builder').then(module => ({ default: module.Builder })))
 const Templates = lazy(() => import('./components/Templates').then(module => ({ default: module.Templates })))
@@ -12,7 +13,7 @@ const AtsChecker = lazy(() => import('./components/AtsChecker').then(module => (
 const SettingsPage = lazy(() => import('./components/SettingsPage').then(module => ({ default: module.SettingsPage })))
 const CoverLetter = lazy(() => import('./components/CoverLetter').then(module => ({ default: module.CoverLetter })))
 
-const BrandMark = () => <img className="brand-mark" src="/resume-studio-logo.png" alt="Resume Studio logo" width="36" height="36" />
+const BrandMark = () => <img className="brand-mark" src={studioLogo} alt="Resume Studio logo" width="36" height="36" />
 
 const navItems = [
   { to: '/', label: 'Workspace', icon: LayoutDashboard, end: true },

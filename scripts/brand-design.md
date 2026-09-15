@@ -8,7 +8,7 @@ Use case: logo-brand. Create a premium, memorable SYMBOL-ONLY logo for Resume St
 
 ## Saved assets
 
-- `client/public/resume-studio-logo.png`: 256px app logo
+- `client/src/assets/resume-studio-logo.png`: 256px app logo, imported by the app and emitted with a content hash for cache updates
 - `client/public/favicon.ico`: 16px, 32px and 48px browser icons
 - `client/public/favicon-32.png`: PNG favicon
 - `client/public/favicon.svg`: compatibility wrapper containing the generated logo
