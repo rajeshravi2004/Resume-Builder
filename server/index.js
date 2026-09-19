@@ -41,7 +41,8 @@ function wrapHtmlDocument(contentHtml) {
 }
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, aiConfigured: Boolean(process.env.OPENAI_API_KEY), chromePath: getChromePath() });
+  const aiProviders = aiHandler.getAiProviders();
+  res.json({ ok: true, aiConfigured: Object.values(aiProviders).some(Boolean), aiProviders, chromePath: getChromePath() });
 });
 
 app.post('/ai', aiHandler);

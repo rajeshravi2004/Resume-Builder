@@ -1,10 +1,21 @@
 const apiBase = import.meta.env.PROD ? '/api' : 'http://localhost:4000'
-const sessionKeyName = 'resume-studio-openai-key'
+export const AI_PROVIDERS = [
+  { id: 'openai', name: 'OpenAI', placeholder: 'sk-...' },
+  { id: 'gemini', name: 'Google Gemini', placeholder: 'AIza...' },
+]
+export const getAiProvider = () => {
+  const provider = sessionStorage.getItem('resume-studio-ai-provider')
+  return AI_PROVIDERS.some(item => item.id === provider) ? provider : 'openai'
+}
+export const setAiProvider = provider => {
+  if (AI_PROVIDERS.some(item => item.id === provider)) sessionStorage.setItem('resume-studio-ai-provider', provider)
+}
+const sessionKeyName = provider => `resume-studio-${provider}-key`
 
-export const getSessionAiKey = () => sessionStorage.getItem(sessionKeyName) || ''
-export const setSessionAiKey = value => {
-  if (value) sessionStorage.setItem(sessionKeyName, value)
-  else sessionStorage.removeItem(sessionKeyName)
+export const getSessionAiKey = (provider = getAiProvider()) => sessionStorage.getItem(sessionKeyName(provider)) || ''
+export const setSessionAiKey = (value, provider = getAiProvider()) => {
+  if (value.trim()) sessionStorage.setItem(sessionKeyName(provider), value.trim())
+  else sessionStorage.removeItem(sessionKeyName(provider))
 }
 
 const parseError = async response => {
@@ -13,11 +24,12 @@ const parseError = async response => {
 }
 
 export const requestAi = async payload => {
-  const sessionKey = getSessionAiKey()
+  const provider = getAiProvider()
+  const sessionKey = getSessionAiKey(provider)
   const response = await fetch(`${apiBase}/ai`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(sessionKey ? { 'X-OpenAI-API-Key': sessionKey } : {}) },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json', ...(sessionKey ? { 'X-AI-API-Key': sessionKey } : {}) },
+    body: JSON.stringify({ ...payload, provider }),
   })
   if (!response.ok) return parseError(response)
   return response.json()

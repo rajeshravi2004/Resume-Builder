@@ -1,4 +1,6 @@
 const ALLOWED_TYPES = new Set(['refine', 'design', 'linkedin']);
+const PROVIDERS = { openai: { name: 'OpenAI', env: 'OPENAI_API_KEY' }, gemini: { name: 'Google Gemini', env: 'GEMINI_API_KEY' } };
+const getAiProviders = () => Object.fromEntries(Object.entries(PROVIDERS).map(([id, config]) => [id, Boolean(process.env[config.env]?.trim())]));
 
 const extractText = payload => {
   if (payload.output_text) return payload.output_text;
@@ -13,15 +15,17 @@ const parseJson = value => {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-OpenAI-API-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-AI-API-Key, X-OpenAI-API-Key');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const suppliedKey = String(req.headers['x-openai-api-key'] || '').trim();
-  const apiKey = process.env.OPENAI_API_KEY || (suppliedKey.length >= 20 ? suppliedKey : '');
-  if (!apiKey) return res.status(503).json({ error: 'AI is not configured. Add an OpenAI API key in Settings or configure OPENAI_API_KEY on the server.' });
-
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const provider = body.provider ?? 'openai';
+    if (!Object.hasOwn(PROVIDERS, provider)) return res.status(400).json({ error: 'Select a supported AI provider: OpenAI or Google Gemini.' });
+    const config = PROVIDERS[provider];
+    const suppliedKey = String(req.headers['x-ai-api-key'] || (provider === 'openai' ? req.headers['x-openai-api-key'] || '' : '')).trim();
+    const apiKey = suppliedKey || process.env[config.env]?.trim();
+    if (!apiKey) return res.status(503).json({ error: `${config.name} is not configured. Add its API key in Settings or configure ${config.env} on the server.` });
     if (!ALLOWED_TYPES.has(body.type)) return res.status(400).json({ error: 'Unsupported AI request' });
 
     let instructions;
@@ -46,7 +50,17 @@ module.exports = async (req, res) => {
       tools = [{ type: 'web_search' }];
     }
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    const geminiModel = body.type === 'linkedin' ? (process.env.GEMINI_WEB_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash') : (process.env.GEMINI_MODEL || 'gemini-2.5-flash');
+    const response = provider === 'gemini' ? await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents: [{ role: 'user', parts: [{ text: input }] }],
+        ...(body.type === 'design' ? { generationConfig: { responseMimeType: 'application/json' } } : {}),
+        ...(body.type === 'linkedin' ? { tools: [{ google_search: {} }] } : {}),
+      }),
+    }) : await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -58,8 +72,10 @@ module.exports = async (req, res) => {
       }),
     });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error?.message || 'OpenAI request failed');
-    const output = extractText(payload);
+    if (!response.ok) throw new Error(payload.error?.message || `${config.name} request failed`);
+    const output = provider === 'gemini'
+      ? (payload.candidates?.[0]?.content?.parts || []).filter(part => !part.thought).map(part => part.text || '').join('')
+      : extractText(payload);
     if (!output) throw new Error('The AI response was empty.');
     if (body.type === 'refine') return res.status(200).json({ text: output.trim() });
     const parsed = parseJson(output);
@@ -75,3 +91,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: error.message || 'AI request failed' });
   }
 };
+
+module.exports.getAiProviders = getAiProviders;

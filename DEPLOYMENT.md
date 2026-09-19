@@ -68,6 +68,14 @@ The project is set up as a monorepo with:
 
 ## API Endpoints
 
+### AI providers
+
+In Settings → Integrations, select OpenAI or Google Gemini and save a key for the current browser session. Each provider has a separate session key. The selection applies to writing refinement, template generation, and public LinkedIn import. Session keys take priority over the selected provider's server key.
+
+For shared credentials, configure `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in Vercel. Optional `OPENAI_MODEL` and `GEMINI_MODEL` override the defaults; `OPENAI_WEB_MODEL` and `GEMINI_WEB_MODEL` can override the LinkedIn import models. Never prefix these secrets with `VITE_`. Health responses include an `aiProviders` map indicating which providers have server credentials.
+
+Run `node scripts/check-ai-providers.cjs` to check routing and credential isolation without making paid API calls. Provider integration references: [OpenAI Responses](https://platform.openai.com/docs/api-reference/responses) and [Gemini generateContent](https://ai.google.dev/api/generate-content).
+
 After deployment, your API endpoints will be available at:
 - `https://your-project.vercel.app/api/export/pdf` (POST)
 - `https://your-project.vercel.app/api/export/docx` (POST)
