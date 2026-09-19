@@ -190,3 +190,9 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .ai-provider-field select { width: 100%; height: 35px; padding: 0 10px; border: 1px solid #d8dce3; border-radius: 5px; background: #fff; color: var(--ink); font: inherit; font-size: 11px; }
 .ai-provider-field select:focus-visible { outline: 2px solid #6685ad; outline-offset: 2px; }
 @media (max-width: 600px) { .ai-key-panel { grid-template-columns: 1fr; } .ai-key-panel > div { justify-content: flex-end; } }
+
+.ai-key-panel > .ai-model-panel { display: block; grid-column: 1 / -1; min-width: 0; }
+.ai-model-panel > p { margin: 6px 0 0; color: #7c8593; font-size: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.ai-custom-model { display: flex; gap: 8px; align-items: end; margin-top: 9px; }
+.ai-custom-model label { flex: 1; min-width: 0; }
+.ai-custom-model input { padding: 0 10px; }

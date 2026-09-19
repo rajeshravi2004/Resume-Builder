@@ -4,6 +4,7 @@ import { AI_PROVIDERS, getAiProvider, getSessionAiKey, getSystemStatus, setAiPro
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useResumeStore } from '../store'
 import { ConfirmModal, NoticeModal } from './AppModal'
+import { AiModelSettings } from './AiModelSettings'
 
 const downloadWorkspace = state => {
   const payload = JSON.stringify({ profiles: state.profiles, resumes: state.resumes, activeProfileId: state.activeProfileId, activeResumeId: state.activeResumeId }, null, 2)
@@ -75,6 +76,7 @@ export const SettingsPage = () => {
           </div>
           <div className="ai-key-panel">
             <label className="ai-provider-field"><span>AI provider</span><select aria-label="AI provider" value={aiProvider} onChange={changeProvider}>{AI_PROVIDERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+            <AiModelSettings key={aiProvider} provider={provider} />
             <label><span>{provider.name} API key for this browser session</span><div><KeyRound size={15} /><input type="password" autoComplete="off" spellCheck="false" value={aiKey} onChange={event => setAiKey(event.target.value)} placeholder={provider.placeholder} /></div></label>
             <div><button className="button secondary compact" disabled={!aiKey && !sessionReady} onClick={() => { setAiKey(''); setSessionAiKey('', aiProvider); setNotice({ title: 'Session API key removed', description: `The ${provider.name} key has been cleared from this browser tab.` }) }}>Clear</button><button className="button primary compact" disabled={!aiKey.trim()} onClick={saveAiKey}>Use this key</button></div>
             <p>Your selection applies to all AI tools. Keys are kept separately for each provider in this tab's session storage and are never saved to your workspace. Your session key takes priority over a shared server key.</p>

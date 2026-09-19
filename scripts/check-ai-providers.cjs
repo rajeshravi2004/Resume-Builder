@@ -22,6 +22,7 @@ const invoke = async (body, headers = {}, method = 'POST', target = handler) => 
   try {
     delete process.env.OPENAI_API_KEY;
     delete process.env.GEMINI_API_KEY;
+    for (const key of ['OPENAI_MODEL', 'OPENAI_WEB_MODEL', 'GEMINI_MODEL', 'GEMINI_WEB_MODEL']) delete process.env[key];
     for (const provider of ['openai', 'gemini']) {
       const result = await invoke({ type: 'refine', provider, text: 'Resume' });
       assert.equal(result.code, 503);
@@ -38,9 +39,23 @@ const invoke = async (body, headers = {}, method = 'POST', target = handler) => 
     result = await invoke({ type: 'refine', provider: 'gemini', text: 'Resume' }, { 'x-ai-api-key': 'session-gemini-test-key' });
     assert.equal(result.data.text, output);
     assert.match(requests.at(-1).url, /^https:\/\/generativelanguage.googleapis.com\//);
+    assert.match(requests.at(-1).url, /\/models\/gemini-3\.6-flash:generateContent$/);
     assert.equal(requests.at(-1).headers['x-goog-api-key'], 'session-gemini-test-key');
     assert.equal(requests.at(-1).headers.Authorization, undefined);
     assert.ok(requests.at(-1).body.systemInstruction.parts[0].text);
+    process.env.GEMINI_MODEL = 'server-default-model';
+    result = await invoke({ type: 'refine', provider: 'gemini', model: ' models/gemini-3.6-flash ', text: 'Resume' }, { 'x-ai-api-key': 'session-gemini-test-key' });
+    assert.equal(result.code, 200);
+    assert.match(requests.at(-1).url, /\/models\/gemini-3\.6-flash:generateContent$/);
+    await invoke({ type: 'refine', provider: 'gemini', text: 'Resume' }, { 'x-ai-api-key': 'session-gemini-test-key' });
+    assert.match(requests.at(-1).url, /\/models\/server-default-model:generateContent$/);
+    await invoke({ type: 'refine', provider: 'openai', model: 'ft:gpt-5-mini:example:custom:123', text: 'Resume' });
+    assert.equal(requests.at(-1).body.model, 'ft:gpt-5-mini:example:custom:123');
+    const requestCount = requests.length;
+    for (const model of [123, {}, 'bad model', 'https://example.com/model', 'models/', '../model', 'a'.repeat(201)]) {
+      assert.equal((await invoke({ type: 'refine', provider: 'gemini', model, text: 'Resume' })).code, 400);
+    }
+    assert.equal(requests.length, requestCount);
     process.env.GEMINI_API_KEY = 'server-gemini-test-key';
     output = JSON.stringify({ name: 'Editorial', design: { layout: 'one-column' } });
     result = await invoke({ type: 'design', provider: 'gemini', prompt: 'Simple' });
@@ -55,6 +70,11 @@ const invoke = async (body, headers = {}, method = 'POST', target = handler) => 
     assert.deepEqual(requests.at(-1).body.tools, [{ google_search: {} }]);
     assert.equal(requests.at(-1).body.generationConfig, undefined);
     assert.deepEqual(result.data.sections.experience, []);
+    process.env.GEMINI_WEB_MODEL = 'server-web-model';
+    await invoke({ type: 'linkedin', provider: 'gemini', model: 'gemini-custom-web', url: 'https://www.linkedin.com/in/test-person' });
+    assert.match(requests.at(-1).url, /\/models\/gemini-custom-web:generateContent$/);
+    await invoke({ type: 'linkedin', provider: 'gemini', url: 'https://www.linkedin.com/in/test-person' });
+    assert.match(requests.at(-1).url, /\/models\/server-web-model:generateContent$/);
     output = JSON.stringify({ verification: { accessible: false } });
     assert.equal((await invoke({ type: 'linkedin', provider: 'gemini', url: 'https://www.linkedin.com/in/test-person' })).code, 422);
     assert.equal((await invoke({ type: 'linkedin', provider: 'gemini', url: 'https://example.com/in/test' })).code, 400);
@@ -63,10 +83,10 @@ const invoke = async (body, headers = {}, method = 'POST', target = handler) => 
     assert.equal((await invoke({}, {}, 'GET')).code, 405);
     result = await invoke({}, {}, 'GET', health);
     assert.deepEqual(result.data.aiProviders, { openai: true, gemini: true });
-    console.log('PASS: provider routing, isolated credentials, session priority, legacy OpenAI keys, Gemini text/JSON/search, LinkedIn validation, CORS and health status');
+    console.log('PASS: provider routing, isolated credentials, model selection/defaults/validation, session priority, legacy OpenAI keys, Gemini text/JSON/search, LinkedIn validation, CORS and health status');
   } finally {
     global.fetch = originalFetch;
-    for (const key of ['OPENAI_API_KEY', 'GEMINI_API_KEY']) {
+    for (const key of ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'OPENAI_MODEL', 'OPENAI_WEB_MODEL', 'GEMINI_MODEL', 'GEMINI_WEB_MODEL']) {
       if (originalEnv[key] === undefined) delete process.env[key];
       else process.env[key] = originalEnv[key];
     }

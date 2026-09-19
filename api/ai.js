@@ -22,6 +22,10 @@ module.exports = async (req, res) => {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const provider = body.provider ?? 'openai';
     if (!Object.hasOwn(PROVIDERS, provider)) return res.status(400).json({ error: 'Select a supported AI provider: OpenAI or Google Gemini.' });
+    if (body.model != null && typeof body.model !== 'string') return res.status(400).json({ error: 'Model must be a model ID.' });
+    const selectedModel = provider === 'gemini' ? (body.model || '').trim().replace(/^models\//, '') : (body.model || '').trim();
+    const validModel = provider === 'gemini' ? /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/ : /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/;
+    if (((body.model || '').trim() && !selectedModel) || (selectedModel && (!validModel.test(selectedModel) || selectedModel.includes('://')))) return res.status(400).json({ error: 'Enter a valid model ID without spaces or a URL in Settings.' });
     const config = PROVIDERS[provider];
     const suppliedKey = String(req.headers['x-ai-api-key'] || (provider === 'openai' ? req.headers['x-openai-api-key'] || '' : '')).trim();
     const apiKey = suppliedKey || process.env[config.env]?.trim();
@@ -50,7 +54,7 @@ module.exports = async (req, res) => {
       tools = [{ type: 'web_search' }];
     }
 
-    const geminiModel = body.type === 'linkedin' ? (process.env.GEMINI_WEB_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash') : (process.env.GEMINI_MODEL || 'gemini-2.5-flash');
+    const geminiModel = (selectedModel || (body.type === 'linkedin' && process.env.GEMINI_WEB_MODEL) || process.env.GEMINI_MODEL || 'gemini-3.6-flash').replace(/^models\//, '');
     const response = provider === 'gemini' ? await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -64,7 +68,7 @@ module.exports = async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: body.type === 'linkedin' ? (process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-5.4-mini') : (process.env.OPENAI_MODEL || 'gpt-5-mini'),
+        model: selectedModel || (body.type === 'linkedin' ? (process.env.OPENAI_WEB_MODEL || process.env.OPENAI_MODEL || 'gpt-5.4-mini') : (process.env.OPENAI_MODEL || 'gpt-5-mini')),
         instructions,
         input,
         store: false,

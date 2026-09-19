@@ -70,7 +70,7 @@ The project is set up as a monorepo with:
 
 ### AI providers
 
-In Settings → Integrations, select OpenAI or Google Gemini and save a key for the current browser session. Each provider has a separate session key. The selection applies to writing refinement, template generation, and public LinkedIn import. Session keys take priority over the selected provider's server key.
+In Settings → Integrations, select OpenAI or Google Gemini and save a key for the current browser session. Each provider has a separate session key and model selection. Choose a listed model or Other / custom, enter the exact model ID, and click Use model. The selected model overrides server model settings for all AI tools; Default for this provider restores server defaults. Gemini defaults to `gemini-3.6-flash`. A `models/` prefix in a Gemini model ID is accepted. Custom models must support text generation and, for LinkedIn import, web search. The selection applies to writing refinement, template generation, and public LinkedIn import. Session keys take priority over the selected provider's server key.
 
 For shared credentials, configure `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in Vercel. Optional `OPENAI_MODEL` and `GEMINI_MODEL` override the defaults; `OPENAI_WEB_MODEL` and `GEMINI_WEB_MODEL` can override the LinkedIn import models. Never prefix these secrets with `VITE_`. Health responses include an `aiProviders` map indicating which providers have server credentials.
 
